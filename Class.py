@@ -82,7 +82,7 @@ class Trace:
 
             # Konstrukcija recorded
             self.header_int = sp.array(sorted(header_int))
-            self.recorded = sp.zeros(header_int[-1] + 1)
+            self.recorded = sp.zeros(self.header_int[-1] + 1)
             for i in range(header_int[-1] + 1):
                 if i in header_int:
                     self.recorded[i] = 1
