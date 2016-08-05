@@ -1,0 +1,292 @@
+# funkcije za fitanje RGA posnetkov
+# Aug 2016
+# Aleksander Drenik
+# IJS, Ljubljana
+# IPP, Garching
+
+import sympy
+import scipy as sp
+import scipy.optimize as so
+import math
+import time
+import copy
+
+
+version = '1.01'
+
+def check_candidates(hydrogen_species,non_H_species):
+    #check if format of candidate molecules is OK
+    errors = []
+    for key in hydrogen_species.keys():
+        specimen = hydrogen_species[key]
+        pressure = specimen[0]
+        mol_name = specimen[1]
+        ratio_raw = specimen[2]
+        err_val = 0
+        if mol_name not in molecules.known_hydrogen_species:
+            print "Molecule %s not among hydrogen species" %mol_name
+            err_val = 1
+        if type(pressure) != str:
+            print "Invalid pressure parameter type for %s." %mol_name
+            err_val = 10
+        if type(mol_name) != str:
+            print "Invalid molecule name type for %s." %mol_name
+            err_val = 2
+        if type(ratio_raw) == list:
+            if len(ratio_raw) != 3:
+                print "Wrong H/(D+H) ratio definition for %s" %mol_name
+                err_val = 50
+            else:
+                ratio, ratio_min, ratio_max = ratio_raw
+                if type(ratio) != str:
+                    print "Invalid H/(D+H) ratio parameter type for %s" %mol_name
+                    err_val = 51
+                if type(ratio_min) not in [int,float] or type(ratio_max) not in [int,float]:
+                    print "Invalid H/(D+H) ratio boundary type for %s" %mol_name
+                    err_val = 52
+                if ratio_min > ratio_max or not(0 <= ratio_min <= 1) or not(0 <= ratio_max <= 1):
+                    print "Invalid H/(D+H) ratio boundary definition for %s" %mol_name
+                    err_val = 55
+        elif type(ratio_raw) not in [str,int,float]:
+            print "Invalid H/(D+H) ratio parameter type for %s" %mol_name
+            err_val = 40
+        errors.append(err_val)
+        
+    for key in non_H_species.keys():
+        specimen = non_H_species[key]
+        pressure = specimen[0]
+        mol_name = specimen[1]
+        err_val = 0
+        if mol_name not in molecules.known_other_species:
+            print "Molecule %s not among non-hydrogen species" %mol_name
+            err_val = 1
+        if type(pressure) != str:
+            print "Invalid pressure parameter type for %s." %mol_name
+            err_val = 10
+        if type(mol_name) != str:
+            print "Invalid molecule name type for %s." %mol_name
+            err_val = 2
+        errors.append(err_val)
+
+    return errors
+
+def make_candidates(molecules, hydrogen_species, non_H_species):
+
+    candidates = []
+    ratios = []
+    parameters = []
+    pressures = []
+    ratios = []
+    boundaries = []
+    init_vals = []
+    for key in hydrogen_species.keys():
+        specimen = hydrogen_species[key]
+        pressure = specimen[0]
+        mol_name = specimen[1]
+        ratio_raw = specimen[2]
+        if pressure not in parameters:
+            local_parameters = [pressure]
+            parameters.append(pressure)
+            pressures.append(pressure)
+            boundaries.append([0,None])
+            init_vals.append(1)
+        #preveri, da je izotopsko razmerje v redu
+        if type(ratio_raw) == list:
+            if len(ratio_raw) != 3:
+                print "Wrong D/(D+H) ratio definition for %s" %mol_name
+                continue
+            else:
+                ratio = ratio_raw[0]
+                ratio_bnd = ratio_raw[1:]
+                if ratio not in parameters:
+                    local_parameters.append(ratio)
+                    parameters.append(ratio)
+                    ratios.append(ratio)
+                    boundaries.append(ratio_bnd)
+                    init_vals.append(0.5)
+        elif type(ratio_raw) == str:
+            ratio = ratio_raw
+            ratio_bnd = [0,1]
+            if ratio not in parameters:
+                local_parameters.append(ratio)
+                parameters.append(ratio)
+                ratios.append(ratio)
+                boundaries.append(ratio_bnd)
+                init_vals.append(0.5)
+        elif type(ratio_raw) in [int,float]:
+            ratio = ratio_raw
+
+        par_string = ", ".join(local_parameters)
+
+        strings_to_exec = []
+        strings_to_exec.append("%s = sympy.symbols('%s')" %(par_string, par_string))
+        strings_to_exec.append("local_candidate = %s * molecules.construct('%s', %s)" %(pressure, mol_name, ratio))
+        for string in strings_to_exec:
+            exec(string)
+
+        candidates.append(local_candidate)
+        
+    for key in non_H_species.keys():
+        specimen = non_H_species[key]
+        pressure = specimen[0]
+        mol_name = specimen[1]
+        parameters.append(pressure)
+        pressures.append(pressure)
+        boundaries.append([0,None])
+        init_vals.append(1)
+        exec("%s = sympy.symbols('%s')" %(pressure, pressure))
+        exec("local_candidate = %s * molecules.CP['%s']" %(pressure, mol_name))
+        
+        candidates.append(local_candidate)
+        
+    candidate_dict = {"candidates": candidates, "parameters": parameters, "pressures": pressures, "ratios": ratios, "boundaries": boundaries, "init_vals": init_vals}
+        
+    
+    return candidate_dict
+
+def check_disregard(disregard):
+    errors = []
+    for element in disregard:
+        err_val = 0
+        if type(element) not in [int,list]:
+            err_val = 1
+            #wrong definition type
+        if type(element) == list:
+            if len(element) != 3:
+                #Wrong length of list
+                err_val = 21
+            if type(element[0]) != int:
+                #Wrong type of disregarded mass definition
+                err_val = 22
+            if type(element[1]) != int:
+                #Wrong type of trigger mass definition
+                err_val = 23
+            if type(element[2]) not in [float, int]:
+                #Threshold value not a number - rethink the int part
+                err_val = 24
+        errors.append(err_val)
+    return errors
+
+# definicija fit_line funkcije
+# input: line, recorded, header_int, Hspecies, nonHspecies, disregard
+# output: results(dictionary), calculated_masses
+
+def fit_line(line, recorded_in, header_int, candidates_dict, disregard):
+
+    candidates = candidates_dict["candidates"]
+    par_all = candidates_dict["parameters"]
+    par_pres = candidates_dict["pressures"]
+    par_rat = candidates_dict["ratios"]
+    boundaries = candidates_dict["boundaries"]
+    init_vals = candidates_dict["init_vals"]
+        
+    masses_of_interest = []
+    for mass in range(1,header_int[-1] + 1):
+        if sum(candidates)[mass] != 0:
+            masses_of_interest.append(mass) 
+            
+    recorded = copy.copy(recorded_in)
+    for element in disregard:
+        if type(element) == int:
+            if len(line) >= element:
+                recorded[element] = 0
+                #print "disregarding %s allways" %element
+        if type(element) == list:
+            if len(element) == 3:
+                try:
+                    if line[element[1]] > element[2]:
+                        recorded[element[0]] = 0
+                        #print "disregarding %s - on condition" %element[0]
+                except:
+                    #print "not disregarding shit"
+                    pass
+            
+    try:
+        maxvalexp = math.ceil(-math.log10(max(line[1:])))
+    except ValueError:
+        maxvalexp = math.ceil(-math.log10(-min(line[1:])))
+    maxval = 10**maxvalexp
+    
+    ansatz = sum(candidates)
+    equations = []
+    for i in masses_of_interest:
+        recording = line[i] * maxval
+        equations.append(recorded[i]*(recording-ansatz[i])*(recording-ansatz[i]))
+    residual_string = str(sum(equations))
+    par_string = "%s = x" %", ".join(par_all)
+    
+    def residual(x):
+        exec(par_string) in locals()
+        return eval(residual_string)
+    
+    def calculate_masses(x):
+        exec(par_string) in locals()
+        output = []
+        for mass in map(str,ansatz):
+            output.append(eval(mass) * maxval**-1)
+        return sp.array(output)
+    
+    start_time = time.clock()
+    rez = so.minimize(residual,init_vals,bounds=boundaries,method='L-BFGS-B')
+    residual_value = math.sqrt(rez.fun*maxval**-2)
+    loc_duration = time.clock() - start_time
+
+    results={}
+    
+    for i in range(0,len(par_all)):
+        results[par_all[i]]=rez.x[i]
+    for prs in par_pres:
+        results[prs] = results[prs] * maxval**-1
+    results['duration'] = loc_duration
+    results['residual_value'] = residual_value
+    
+    sim_masses = calculate_masses(rez.x)
+    
+    return results, sim_masses
+    
+def export_CP(CPdict):
+    outtab = [["#Cracking patterns used in fit"],[]]
+    outheader = ["#Gas","2nd peak","3rd peak","relative intensity"]
+    for key in ["device", "version"]:
+        try:
+            line = [key, CPdict[key]]
+        except:
+            line = [key, "N/A"]
+        outtab.append(line)
+    outtab.append([])
+    outtab.append(outheader)
+    for key in ["water", "ammonia", "methane"]:
+        try:
+            line = [key] + CPdict[key]
+        except:
+            line = [key] + ["N/A","N/A","N/A"]
+        outtab.append(line)
+    for key in CPdict.keys():
+        if key not in ["device", "version", "water", "ammonia", "methane"]:
+            try:
+                line = [key] + CPdict[key]
+            except:
+                line = [key] + ["N/A","N/A","N/A"]
+            outtab.append(line)
+    return outtab
+    
+def export_candidates(H_species, non_H_species, disregard):
+
+    outtab = []
+    outtab.append(["# Hydrogen species"])
+    for key in H_species:
+        line = ["Hspecies:", key] + H_species[key]
+        if type(line[-1]) == list:
+            line = line[:-1] + line[-1]
+        outtab.append(line)
+    outtab.append(["# non-Hydrogen species"])
+    for key in non_H_species:
+        line = ["nonHspecies:", key] + non_H_species[key]
+        outtab.append(line)
+    outtab.append(["# Disregard"])
+    for element in disregard:
+        if type(element) != list:
+            element = [element]
+        line = ["Disregard:"] + element
+        outtab.append(line)
+    return outtab
