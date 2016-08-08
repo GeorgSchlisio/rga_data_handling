@@ -40,6 +40,10 @@ pulse_stop = None
 
 class Trace:
     # data handler - napisi vec
+    # Internal errors: tag['init_errors']
+    # 101: empty or invalid data dictionary
+    # 102: empty data columns
+    # 103: empty header_int
     
     def __init__(self, columns, tag):
         
@@ -47,12 +51,13 @@ class Trace:
         self.columns = {}
         self.filled = False
         self.deconvoluted = False
+        bloc_len = 0
         
         if type(tag) != dict:
             self.tag = {'raw_tag':tag}
         else:
             self.tag = tag
-        
+        self.tag['init_errors'] = []
         # najprej iz columnsov izlusci stolpce z maso in ostale stolpce
         header_int = []
         lengths = {}
@@ -65,9 +70,16 @@ class Trace:
                 self.columns[value] = sp.array(columns[key])
             except ValueError:
                 self.columns[key] = sp.array(columns[key])
-        bloc_len = min(lengths.values())
-        for key in self.columns.keys():
-            self.columns[key] = self.columns[key][:bloc_len]
+        if len(header_int) == 0:
+            self.tag['init_errors'].append(103)
+        try:        
+            bloc_len = min(lengths.values())
+            for key in self.columns.keys():
+                self.columns[key] = self.columns[key][:bloc_len]
+            if bloc_len == 0:
+                self.tag['init_errors'].append(102)
+        except ValueError:
+            self.tag['init_errors'].append(101)
         # naredi stolpec z indexi vrstic
         self.columns['index'] = sp.arange(bloc_len)
         if len(header_int) > 0 and bloc_len > 0:
@@ -82,7 +94,7 @@ class Trace:
 
             # Konstrukcija recorded
             self.header_int = sp.array(sorted(header_int))
-            self.recorded = sp.zeros(header_int[-1] + 1)
+            self.recorded = sp.zeros(self.header_int[-1] + 1)
             for i in range(header_int[-1] + 1):
                 if i in header_int:
                     self.recorded[i] = 1
@@ -98,7 +110,8 @@ class Trace:
             
             
     def replace_CP(self, path):
-        self.molecules.init_CP(path)    
+        if self.filled:
+            self.molecules.init_CP(path)    
             
     def set_timecol(self, time_key):
         if time_key in self.columns.keys():

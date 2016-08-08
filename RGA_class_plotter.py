@@ -204,7 +204,7 @@ def show_results_trace(in_trace, gas_list=None):
     
     fig = plt.figure()
     time_step = sp.mean(sp.diff(columns[time_col]))
-    time_frame = [rescols[time_col][0] - time_step, rescols[time_col][-1] + time_step]
+    time_frame = [rescols[time_col][0] - time_step/2, rescols[time_col][-1] + time_step/2]
     
     # Plot of recorded and simulated masses
     mass_plot = fig.add_subplot(3,1,1)
