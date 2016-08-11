@@ -208,7 +208,7 @@ class Trace:
                 self.masses_of_interest.append(mass)
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
-        ti_list = range(ti_list[0],ti_list[-1],step)  
+        ti_list = range(ti_list[0],ti_list[-1]+1,step)  
         
                 
         simtrace = []
@@ -328,7 +328,10 @@ class Trace:
         if pulse_start == None:
             pulse_start = 0
         if pulse_stop == None:
-            pulse_stop = self.columns[self.time_col][-1]
+            try:
+                pulse_stop = self.columns[self.time_col][-1]
+            except AttributeError:
+                pulse_stop = pulse_start
         
         # Pulse integration of the raw data
         # Datapoints prior to pulse_start will be averaged as background
