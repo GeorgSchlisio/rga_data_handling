@@ -546,3 +546,86 @@ class Profile:
             write_to_TSV(cpname, outCPtab)
             out_cand_tab = export_candidates(self.H_species, self.non_H_species, self.disregard)
             write_to_TSV(candname, out_cand_tab)
+
+
+# zdruzevanje rezultatov fita v enem trejsu
+
+def join_traces(in_trace_list):
+
+    tracelist = []
+    for trace in in_trace_list:
+        # najprej sortiranje tracov po zacetnem casu
+        tracelist.append([trace.rescols[trace.time_col][0], trace, trace.time_col])
+    tracelist = sorted(tracelist)    
+    tc = tracelist[0][2]
+    for entry in tracelist[1:]:
+        if entry[2] != tc:
+            print "Time col not same in all traces."
+
+    rescols_j = {}
+    HM_j = {}
+    NHM_j = {}
+    moi_j = []
+    stc_j = {}
+
+    rescols_j[tc] = sp.array([])
+    rescols_j['residual'] = sp.array([])
+    rescols_j['duration'] = sp.array([])
+
+
+    for entry in tracelist:
+        trace = entry[1]
+        rc_t = trace.rescols
+        stc_t = trace.simtracecol
+
+        HM_t = trace.H_species
+        NHM_t = trace.non_H_species
+        moi_t = trace.masses_of_interest
+
+        zerocol_j = sp.zeros(len(rescols_j[tc]))
+        zerocol_t = sp.zeros(len(rc_t[tc]))
+
+        print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(entry[0], ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
+
+        for gas in HM_j.keys():
+            if gas not in HM_t.keys():
+                HM_t[gas] = HM_j[gas]
+                rc_t[gas] = {'pressure': zerocol_t, 'ratio': zerocol_t}
+        for gas in NHM_j.keys():
+            if gas not in NHM_t.keys():
+                NHM_t[gas] = NHM_j[gas]
+                rc_d[gas] = {'pressure': zerocol_t}
+
+        for gas in HM_t.keys():
+            if gas not in HM_j.keys():
+                HM_j[gas] = HM_t[gas]
+                rescols_j[gas] = {'pressure': zerocol_j, 'ratio': zerocol_j}
+            for what in ['pressure', 'ratio']:
+                rescols_j[gas][what] = sp.concatenate((rescols_j[gas][what], rc_t[gas][what]))
+        for gas in NHM_t.keys():
+            if gas not in NHM_j.keys():
+                NHM_j[gas] = NHM_t[gas]
+                rescols_j[gas] = {'pressure': zerocol_j}
+            rescols_j[gas]['pressure'] = sp.concatenate((rescols_j[gas]['pressure'], rc_t[gas]['pressure']))
+        for what in ['duration', 'residual', tc]:
+            rescols_j[what] = sp.concatenate((rescols_j[what], rc_t[what]))
+
+        for mass in moi_t:
+            if mass not in moi_j:
+                moi_j.append(mass)
+        for mass in stc_j.keys():
+            if mass not in stc_t.keys():
+                stc_t[mass] = zerocol_t
+        for mass in stc_t.keys():
+            if mass not in stc_j.keys():
+                stc_j[mass] = zerocol_j
+            stc_j[mass] = sp.concatenate((stc_j[mass], stc_t[mass]))
+
+    jtrace = copy(tracelist[0][1])
+    jtrace.rescols = rescols_j
+    jtrace.H_species = HM_j
+    jtrace.non_H_species = NHM_j
+    jtrace.masses_of_interest = moi_j
+    jtrace.simtracecol = stc_j
+    
+    return jtrace
