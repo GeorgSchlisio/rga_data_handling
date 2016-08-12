@@ -16,7 +16,7 @@ def plot_data_profile(profile):
         plot_mode = "bar"
     mass_col, intensity_col = profile.mass_col, profile.intensity_col
     try:
-        title = trace.tag['title']
+        title = profile.tag['title']
     except KeyError:
         title = "Profile plot"
         

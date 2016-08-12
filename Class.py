@@ -9,6 +9,7 @@ import molecules2
 import scipy as sp
 from RGA_fitting import *
 import RGA_fitting as RGA_fitting
+from os import path, mkdir
 
 version = '2.0'
 versions = {'molecules': molecules2.version, 'RGA_fitting': RGA_fitting.version, 'Class': version}
