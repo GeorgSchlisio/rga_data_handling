@@ -7,7 +7,7 @@
 
 
 version = '2.0'
-versions = {'molecules': molecules2.version, 'Class': version}
+versions = {'Class': version}
 
 import molecules2
 import scipy as sp
@@ -21,6 +21,7 @@ except ImportError:
     
 from os import path, mkdir
 
+versions['molecules'] = molecules2.version,
 
 def pin_point(input_list, sought_value):
     input_col = sp.array(input_list)
