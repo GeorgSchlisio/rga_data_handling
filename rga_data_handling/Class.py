@@ -5,14 +5,22 @@
 # IJS, Ljubljana
 # IPP, Garching
 
-import molecules2
-import scipy as sp
-from RGA_fitting import *
-import RGA_fitting as RGA_fitting
-from os import path, mkdir
 
 version = '2.0'
-versions = {'molecules': molecules2.version, 'RGA_fitting': RGA_fitting.version, 'Class': version}
+versions = {'molecules': molecules2.version, 'Class': version}
+
+import molecules2
+import scipy as sp
+try:
+    from RGA_fitting import *
+    versions['RGA_fitting'] = version
+    fitting_loaded = True
+except ImportError:
+    versions['RGA_fitting'] = version
+    fitting_loaded = False
+    
+from os import path, mkdir
+
 
 def pin_point(input_list, sought_value):
     input_col = sp.array(input_list)
