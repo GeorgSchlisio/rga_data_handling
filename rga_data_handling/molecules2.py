@@ -9,7 +9,7 @@
 # Cracking pattern intensities are read out from calibration file
 # if reading of calib. file fails, default values are loaded (noted in "version")
 
-# TO DO: supplying external CP dictionary (init_CP(dictionary of CP))
+# TO DO: CP calibration data quality check
 
 # TO DO: CP weighted with absolute intensities from CP
 
@@ -43,7 +43,7 @@ class mass_space:
         self.base = base
         self.max_mass = max_mass
         
-    def init_CP(self, filename=None):
+    def init_CP(self, CP_spec=None):
         
         got_calib_file = False
         
@@ -57,15 +57,20 @@ class mass_space:
                  "CO2":[0.114,0.085,1.4],
                  "CO":[0.045,0.009,1.05],
                  "Ne":[0.099,0.003,0.23]}
-        if filename != None:
-            try:
-                calib_file = open(filename, "r").read().splitlines()
-                got_calib_file = True
-            except IOError:
-                got_calib_file = False
-            # print "calibration file not found"
-            # using default values
-        
+        if CP_spec != None:
+            if type(CP_spec) == str:
+                filename = CP_spec
+                try:
+                    calib_file = open(filename, "r").read().splitlines()
+                    got_calib_file = True
+                except IOError:
+                    got_calib_file = False
+                # print "calibration file not found"
+                # using default values
+            elif type(CP_spec) == dict:
+                # TO Do - drugacen handling importa kot pri fajlu
+                self.calib = CP_spec
+                #got_calib_file = True
         
         if got_calib_file:
             self.calib = {}
