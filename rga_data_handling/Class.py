@@ -11,6 +11,7 @@ versions = {'Class': version}
 
 import molecules2
 import scipy as sp
+import random
 try:
     from RGA_fitting import *
     versions['RGA_fitting'] = version
@@ -40,6 +41,16 @@ def PadRight(inputlist, TargetLength, FillValue):
         return inputlist + [FillValue] * (TargetLength - len(inputlist))
     else:
         return inputlist
+
+def perturb_CP(container, perturbation):
+    CP_new = container.molecules.calib
+    for key in CP_new.keys():
+        entry = CP_new[key]
+        if type(entry) == list:
+            for i in [0, 1]:
+                entry[i] = entry[i] * (1 + 2 * perturbation * (random.random() - 0.5))
+    CP_new['version'] = "%s perturbed by %s" %(CP_new['version'], perturbation)
+    container.replace_CP(CP_new)
 
 known_time_labels = ['time', 'hours']
 default_trace_name = 'Timetrace recording'                
