@@ -6,7 +6,7 @@
 # IPP, Garching
 
 
-version = '2.0'
+version = '2.01'
 versions = {'Class': version}
 
 import molecules2
@@ -23,6 +23,43 @@ except ImportError:
 from os import path, mkdir
 
 versions['molecules'] = molecules2.version
+
+known_time_labels = ['time', 'hours']
+
+# Import the default values
+
+"""try:
+    from __main__ import default_values
+    default_loaded = True
+except:
+    default_loaded = False
+    default_values = {}"""
+
+def load_default_values(default_values):
+    global default_trace_name, default_profile_name, export_dir, pulse_start, pulse_stop
+
+    try:
+        default_trace_name = default_values['trace_name']
+    except KeyError:
+        default_trace_name = 'Timetrace recording'
+    try:
+        default_profile_name = default_values['profile_name']
+    except KeyError:
+        default_profile_name = "Profile recording"
+    try:
+        export_dir = default_values['export_dir']
+    except KeyError:
+        export_dir = 'EXPORT'
+
+    try:
+        pulse_start = default_values['pulse_start']
+    except KeyError:
+        pulse_start = 0
+        
+    try:
+        pulse_stop = default_values['pulse_stop']
+    except KeyError:
+        pulse_stop = None
 
 def pin_point(input_list, sought_value):
     input_col = sp.array(input_list)
@@ -52,12 +89,9 @@ def perturb_CP(container, perturbation):
     CP_new['version'] = "%s perturbed by %s" %(CP_new['version'], perturbation)
     container.replace_CP(CP_new)
 
-known_time_labels = ['time', 'hours']
-default_trace_name = 'Timetrace recording'                
-default_profile_name = "Profile recording"
-export_dir = 'EXPORT'
-pulse_start = 0
-pulse_stop = None
+
+load_default_values({})
+
 
 class Trace:
     # data handler - napisi vec
