@@ -416,8 +416,14 @@ class Profile:
             self.tag = tag
             
         # Identify recorded masses and extract the maximal intensities
-        first_mass = max(1, int(min(self.mass_col)))
-        last_mass = int(max(self.mass_col))
+        try:
+            first_mass = max(1, int(min(self.mass_col)))
+        except:
+            first_mass = 0
+        try:
+            last_mass = int(max(self.mass_col))
+        except:
+            last_mass = 0
         
         self.header_int = []
         self.recorded = sp.zeros(last_mass + 1)
