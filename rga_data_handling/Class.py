@@ -21,7 +21,7 @@ except ImportError:
     
 from os import path, mkdir
 
-versions['molecules'] = molecules2.version,
+versions['molecules'] = molecules2.version
 
 def pin_point(input_list, sought_value):
     input_col = sp.array(input_list)
@@ -248,6 +248,7 @@ class Trace:
         self.glob_duration = time.clock() - glob_start
         
         self.rescols = {}
+        self.rescols['index'] = sp.array(ti_list)
         self.rescols[self.time_col] = sp.array(outcols[self.time_col])
         self.rescols['residual'] = sp.array(outcols['residual'])
         self.rescols['duration'] = sp.array(outcols['duration'])
