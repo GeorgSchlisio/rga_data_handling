@@ -37,7 +37,7 @@ def plot_data_trace(trace, masslist=None):
     
     try:
         title = trace.tag['title']
-    except KeyErrror:
+    except KeyError:
         title = "Timetrace plot"
         
     # x axis title
