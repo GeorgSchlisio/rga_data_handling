@@ -36,30 +36,31 @@ except:
     default_values = {}"""
 
 def load_default_values(default_values):
-    global default_trace_name, default_profile_name, export_dir, pulse_start, pulse_stop
+    default = {}
+    try:
+        default['trace_name'] = default_values['trace_name']
+    except KeyError:
+        default['trace_name'] = 'Timetrace recording'
+    try:
+        default['profile_name']  = default_values['profile_name']
+    except KeyError:
+        default['profile_name'] = "Profile recording"
+    try:
+        default['export_dir'] = default_values['export_dir']
+    except KeyError:
+        default['export_dir'] = 'EXPORT'
 
     try:
-        default_trace_name = default_values['trace_name']
+        default['pulse_start'] = default_values['pulse_start']
     except KeyError:
-        default_trace_name = 'Timetrace recording'
-    try:
-        default_profile_name = default_values['profile_name']
-    except KeyError:
-        default_profile_name = "Profile recording"
-    try:
-        export_dir = default_values['export_dir']
-    except KeyError:
-        export_dir = 'EXPORT'
-
-    try:
-        pulse_start = default_values['pulse_start']
-    except KeyError:
-        pulse_start = 0
+        default['pulse_start'] = 0
         
     try:
-        pulse_stop = default_values['pulse_stop']
+        default['pulse_stop'] = default_values['pulse_stop']
     except KeyError:
-        pulse_stop = None
+        default['pulse_stop'] = None
+        
+    return default
 
 def pin_point(input_list, sought_value):
     input_col = sp.array(input_list)
@@ -90,7 +91,7 @@ def perturb_CP(container, perturbation):
     container.replace_CP(CP_new)
 
 
-load_default_values({})
+#load_default_values({})
 
 
 class Trace:
@@ -100,13 +101,18 @@ class Trace:
     # 102: empty data columns
     # 103: empty header_int
     
-    def __init__(self, columns, tag):
+    def __init__(self, columns, tag, default=None):
         
         self.type = "Trace"
         self.columns = {}
         self.filled = False
         self.deconvoluted = False
         bloc_len = 0
+        
+        if default == None:
+            self.def_val = load_default_values({})
+        else:
+            self.def_val = load_default_values(default)
         
         if type(tag) != dict:
             self.tag = {'raw_tag':tag}
@@ -156,7 +162,7 @@ class Trace:
 
             # ime objekta - ce ni v tag-u, se avtoimenuje
             if 'title' not in self.tag.keys():
-                self.tag['title'] = default_trace_name
+                self.tag['title'] = self.def_val['trace_name']
                 
             # Initialize mass-space and cracking patterns
             self.molecules = molecules2.mass_space(self.header_int[-1])
@@ -231,7 +237,7 @@ class Trace:
                 datatag[key] = datatag[key] + ' %s' %self.tag['time_unit']
         datatag["data point"] = ti
         
-        profile = Profile(self.header_int, MID_col, datatag)
+        profile = Profile(self.header_int, MID_col, datatag, self.def_val)
         if self.deconvoluted:
             tri = pin_point(self.rescols[self.time_col], wanted)
             profile.deconvoluted = True
@@ -350,10 +356,12 @@ class Trace:
         self.outsimtrace = [massheader] + self.outsimtrace
         self.deconvoluted = True
         
-    def export(self, name=None, write_path=export_dir, rec=False):
+    def export(self, name=None, write_path=None, rec=False):
         
         if name == None:
             name = self.tag['title']
+        if write_path == None:
+            write_path = self.def_val['export_dir']
         if not path.exists(write_path):
             mkdir(write_path)
      
@@ -380,14 +388,19 @@ class Trace:
         if rec and self.filled:
             write_to_TSV(recname, outrecording)
             
-    def pulse_integrate(self, pulse_start = pulse_start, pulse_stop = pulse_stop):
+    def pulse_integrate(self, pulse_start = None, pulse_stop = None):
         if pulse_start == None:
-            pulse_start = 0
+            try:
+                pulse_start = self.def_val['pulse_start']
+            except KeyError:
+                pulse_start = 0
         if pulse_stop == None:
             try:
                 pulse_stop = self.columns[self.time_col][-1]
             except AttributeError:
                 pulse_stop = pulse_start
+        else:
+            pulse_stop = self.def_val['pulse_stop']
         
         # Pulse integration of the raw data
         # Datapoints prior to pulse_start will be averaged as background
@@ -448,7 +461,7 @@ class Trace:
 
 class Profile:
     
-    def __init__(self, mass_col, intensity_col, tag):
+    def __init__(self, mass_col, intensity_col, tag, default=None):
         
         self.type = "Profile"
         self.mass_col = sp.array(mass_col)
@@ -460,6 +473,10 @@ class Profile:
         else:
             self.tag = tag
             
+        if default == None:
+            self.def_val = load_default_values({})
+        else:
+            self.def_val = load_default_values(default)
         # Identify recorded masses and extract the maximal intensities
         try:
             first_mass = max(1, int(min(self.mass_col)))
@@ -487,7 +504,7 @@ class Profile:
             self.filled = True
         # ime objekta - ce ni v tag-u, se avtoimenuje
         if 'title' not in self.tag.keys():
-            self.tag['title'] = default_profile_name
+            self.tag['title'] = self.def_val['profile_name']
             
         if self.filled:
             # Initialize mass-space and cracking patterns
@@ -551,7 +568,8 @@ class Profile:
         
         
         
-    def export(self, name=None, write_path=export_dir, rec=False):
+    def export(self, name=None, write_path=None, rec=False):
+    
         
         # Contruction of data for export to a TSV file
         
@@ -594,6 +612,8 @@ class Profile:
         self.outtab = sp.transpose(sp.array(outlist))
         self.outtab = [outheader] + list(self.outtab)
         
+        if write_path == None:
+            write_path = self.def_val['export_dir']
         if name == None:
             name = self.tag['title']
         if not path.exists(write_path):
