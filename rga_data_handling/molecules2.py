@@ -147,14 +147,17 @@ class mass_space:
             undefined.append("N2")
         
 
-        # Oxygen
+        # Oxygen and Oxygen 18O2
         # Cracking patterns from calibration file
 
         try:
             ox1, ox2, oxr = self.calib["O2"]
             CP["O2"] = oxr*(base[32] + ox1*base[16] + ox2*base[34])
+            CP["15O2"] = oxr*(base[36] + ox1*base[18] + ox2*base[34]
         except:
             undefined.append("O2")
+           
+    
 
         # Argon
         # Cracking patterns from calibration file
@@ -207,6 +210,7 @@ class mass_space:
         molecule["ammonia"] = b_d(3,3,ratio)*CP["NH3"] + b_d(2,3,ratio)*CP["NDH2"] + b_d(1,3,ratio)*CP["ND2H"] + b_d(0,3,ratio)*CP["ND3"]
         molecule["methane"] = b_d(4,4,ratio)*CP["CH4"] + b_d(3,4,ratio)*CP["CDH3"] + b_d(2,4,ratio)*CP["CD2H2"] + b_d(1,4,ratio)*CP["CD3H"] + b_d(0,4,ratio)*CP["CD4"]
         molecule["ammonia15"] = sp.delete(sp.insert(molecule["ammonia"],0,0),-1)
+        molecule["methane13"] = sp.delete(sp.insert(molecule["methane"],0,0),-1)
 
         try:
             outmol = molecule[molecule_name]
