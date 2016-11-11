@@ -153,7 +153,7 @@ class mass_space:
         try:
             ox1, ox2, oxr = self.calib["O2"]
             CP["O2"] = oxr*(base[32] + ox1*base[16] + ox2*base[34])
-            CP["15O2"] = oxr*(base[36] + ox1*base[18] + ox2*base[34])
+            CP["18O2"] = oxr*(base[36] + ox1*base[18] + ox2*base[34])
         except:
             undefined.append("O2")
            
