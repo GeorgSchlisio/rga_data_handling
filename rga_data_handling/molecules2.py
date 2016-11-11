@@ -211,6 +211,7 @@ class mass_space:
         molecule["methane"] = b_d(4,4,ratio)*CP["CH4"] + b_d(3,4,ratio)*CP["CDH3"] + b_d(2,4,ratio)*CP["CD2H2"] + b_d(1,4,ratio)*CP["CD3H"] + b_d(0,4,ratio)*CP["CD4"]
         molecule["ammonia15"] = sp.delete(sp.insert(molecule["ammonia"],0,0),-1)
         molecule["methane13"] = sp.delete(sp.insert(molecule["methane"],0,0),-1)
+        molecule["water18"] = sp.delete(sp.delete(sp.insert(molecule["water"],[0,0],0),-1),-1)
 
         try:
             outmol = molecule[molecule_name]
