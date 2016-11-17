@@ -143,6 +143,94 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
         
     
     return candidate_dict
+    
+def make_calibration_candidates(mol_def, ratio_def, peak_defs):
+    "Construct the candidates and parameters for fit_line"
+    # Za fit potrebujem:
+    # candidates
+    # parameters
+    # init_vals
+    # boundaries
+
+
+    # najprej identifikacija molekule, ce je mogoce, in priprava definicije za construct_full
+    # construct_full zahteva: NH_mass, nAt, p(AKA ratio), peak_list
+
+    candidates = []
+    parameters = []
+    boundaries = []
+    init_vals = []
+    pressures = []
+    ratios = []
+    peaks = ['1']
+
+    # priprava tlaka:
+
+    parameters.append('pres')
+    pressures.append('pres')
+    boundaries.append([0,None])
+    init_vals.append(1)
+
+    # priprava izotopskega razmerja
+
+    if type(ratio_def) == list:
+        if len(ratio_def) != 3:
+            print "Wrong D/(D+H) ratio definition for %s" %mol_name
+            #continue
+        else:
+            ratio = ratio_def[0]
+            ratio_bnd = ratio_def[1:]
+            if ratio not in parameters:
+                parameters.append(ratio)
+                ratios.append(ratio)
+                boundaries.append(ratio_bnd)
+                init_vals.append(0.5 * (ratio_bnd[1] - ratio_bnd[0]))
+    elif type(ratio_def) == str:
+        ratio = ratio_def
+        ratio_bnd = [0,1]
+        if ratio not in parameters:
+            parameters.append(ratio)
+            ratios.append(ratio)
+            boundaries.append(ratio_bnd)
+            init_vals.append(0.5)
+    elif type(ratio_def) in [int,float]:
+        ratio = ratio_def
+
+
+    for peak_def in peak_defs:
+        if type(peak_def) == list:
+            if len(peak_def) != 3:
+                print "Invalid peak definition"
+                continue
+            if type(peak_def[0]) == str and type(peak_def[1]) in [float, int] and type(peak_def[2]) in [float, int]:
+                parameters.append(peak_def[0])
+                peaks.append(peak_def[0])
+                boundaries.append([peak_def[1], peak_def[2]])
+                init_vals.append(0.5 * (peak_def[2] - peak_def[1]))
+
+        if type(peak_def) == str:
+            parameters.append(peak_def)
+            boundaries.append([0, None])
+            init_vals.append(0.5)
+            peaks.append(peak_def)
+        if type(peak_def) in [float, int]:
+            peaks.append(str(peak_def))
+
+    par_string = ", ".join(parameters)
+    peak_string = "[%s]" %", ".join(peaks)
+
+    strings_to_exec = []
+    strings_to_exec.append("%s = sympy.symbols('%s')" %(par_string, par_string))
+    strings_to_exec.append("candidate = %s * %s * molecules.construct_full(%s, %s, %s, %s)" %('pres', mol_def['rel_int'], mol_def['NH_mass'], 
+                                                            mol_def['nAt'], ratio, peak_string))
+    for string in strings_to_exec:
+            exec(string)
+
+    candidates = [candidate]
+
+    cand_dict = {'candidates': candidates, 'parameters': parameters, 'pressures': ['pres'], 'ratios': [ratio], 'boundaries': boundaries,
+        'init_vals': init_vals, 'peaks': peaks}
+    return cand_dict
 
 def check_disregard(disregard):
     errors = []

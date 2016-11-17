@@ -31,6 +31,62 @@ def b_c(n,k):
 def b_d(k,n,p):
     """binomial distribution probabiliy, k - number of events, n - number of tries, p - probability of event"""
     return b_c(n,k) * p**k * (1-p)**(n-k)
+    
+def branch_one(orig):
+    "Isotope branching in removal of one atom. Input: dictionary: {atom: number}"
+    branch = []
+    for atom in orig.keys():
+        if orig[atom] == 0:
+            continue
+        prob = float(orig[atom]) / sum(orig.values())
+        br = copy(orig)
+        br[atom] -= 1
+        branch.append([prob, br])
+    return branch
+
+def branch_all(mol):
+    "Isotope branching in removal of all atoms. Input: 0-level branch dictionary"
+    branches = {0: [[1,mol]]}
+
+    for i in range(1, sum(mol.values())+1):
+        branches[i] = []
+        for br_pair in branches[i - 1]:
+            prob_main, branch = br_pair
+            branches_local = branch_one(branch)
+            for local_branch in branches_local:
+                prob_loc, br_loc = local_branch
+                branches[i].append([prob_loc * prob_main, br_loc])
+    return branches
+    
+def branch_to_mass(branches):
+    "Calculate masses of isotope branches. Input: branch dictionary. Global: md - atom mass dictionary"
+    masses = {}
+    for br_n in branches.keys():
+        masses[br_n] = {}
+        for br_pair in branches[br_n]:
+            prob, branch = br_pair
+            mass = 0
+            for atom in branch.keys():
+                mass += atom_mass_d[atom] * branch[atom]
+            if mass in masses[br_n].keys():
+                masses[br_n][mass] += prob
+            else:
+                masses[br_n][mass] = prob
+    return masses
+    
+
+# dictionary of atom masses
+atom_mass_d = {'D':2, 'H':1, 'T': 3}
+
+# dictionary of known H-containing molecules:
+# {name: name_in_calib, number of H isotopes, total mass of non-H atoms}
+H_molecules_d = {}
+H_molecules_d['ammonia'] = ['ammonia', 3, 14]
+H_molecules_d['ammonia15'] = ['ammonia', 3, 15]
+H_molecules_d['water'] = ['water', 2, 16]
+H_molecules_d['water18'] = ['water', 2, 18]
+H_molecules_d['methane'] = ['methane', 4, 12]
+H_molecules_d['methane13'] = ['methane', 4, 13]
 
 
 class mass_space:
@@ -203,20 +259,34 @@ class mass_space:
     # The molecule is constructed from all isotopologues. The "concentration" of each isotopologue is calculated by the
     # binomial probability distribution:
     # Probability = b_d (number of H atoms, number of H + D atoms, H/(H+D) ratio)
+    def construct_full(self, NH_mass, nAt, p, peak_list):
+        "construct cracking patterns. input: non-H mass, total number of H isotopes, H/(H+D), CP_list"
+        pattern = []
+        for nH in range(nAt + 1):
+            nH_pattern = []
+            prob = b_d(nH, nAt, p)
+            mol = {'H': nH, 'D': nAt - nH}
+            branches = branch_all(mol)
+            mass_branches = branch_to_mass(branches)
+            num_of_peaks = min(len(mass_branches), len(peak_list))
+            for i in range(num_of_peaks):
+                temp = []
+                peak = peak_list[i]
+                m_br = mass_branches[i]
+                for mass in m_br.keys():
+                    m_prob = m_br[mass]
+                    temp.append(m_prob * self.base[mass + NH_mass])
+                #print peak * sum(temp)
+                nH_pattern.append(peak * sum(temp))
+            pattern.append(prob * sum(nH_pattern))
+        return sum(pattern)
+    
     def construct(self, molecule_name, ratio):
-        CP = self.CP
-        molecule={}
-        molecule["water"] = b_d(2,2,ratio)*CP["H2O"] + b_d(1,2,ratio)*CP["DHO"] + b_d(0,2,ratio)*CP["D2O"]
-        molecule["ammonia"] = b_d(3,3,ratio)*CP["NH3"] + b_d(2,3,ratio)*CP["NDH2"] + b_d(1,3,ratio)*CP["ND2H"] + b_d(0,3,ratio)*CP["ND3"]
-        molecule["methane"] = b_d(4,4,ratio)*CP["CH4"] + b_d(3,4,ratio)*CP["CDH3"] + b_d(2,4,ratio)*CP["CD2H2"] + b_d(1,4,ratio)*CP["CD3H"] + b_d(0,4,ratio)*CP["CD4"]
-        molecule["ammonia15"] = sp.delete(sp.insert(molecule["ammonia"],0,0),-1)
-        molecule["methane13"] = sp.delete(sp.insert(molecule["methane"],0,0),-1)
-
-        try:
-            outmol = molecule[molecule_name]
-        except KeyError:
-            outmol = []
-        return outmol
+        calib_name, nAt, NH_mass = H_molecules_d[molecule_name]
+        calib_list = self.calib[calib_name]
+        intensity = calib_list[-1]
+        peak_list = [1] + calib_list[:-1]
+        return intensity * self.construct_full(NH_mass, nAt, ratio, peak_list)
 
 known_hydrogen_species = ["ammonia","water","methane"]
 known_other_species = ["Ar","O2","CO2","CO","Ne","N2"]
