@@ -107,6 +107,7 @@ class Trace:
         self.columns = {}
         self.filled = False
         self.deconvoluted = False
+        self.calibrated = False
         bloc_len = 0
         
         if default == None:
@@ -356,6 +357,126 @@ class Trace:
         self.outsimtrace = [massheader] + self.outsimtrace
         self.deconvoluted = True
         
+    def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step):
+        
+        self.calib_tag = {}
+        if type(molecule) == str:
+            try:
+                mol_def_1 = molecules2.H_molecules_d[molecule]
+                rel_int = self.molecules.calib[mol_def_1[0]][-1]
+                mol_def = {'NH_mass': mol_def_1[2], 'nAt': mol_def_1[1], 'rel_int': rel_int}
+            except KeyError:
+                #print "Unknown molecule"
+                pass
+        if type(molecule) == dict:
+            if not set(['NH_mass', 'nAt', 'rel_int']).issubset(set(mol_def.keys())):
+                # print invalid molecule definition
+                pass
+            
+        self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
+        self.calib_masses_of_interest = []
+        for mass in range(1,self.header_int[-1] + 1):
+            if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
+                self.calib_masses_of_interest.append(mass)
+        
+        ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
+        ti_list = range(ti_list[0],ti_list[-1]+1,step)  
+        
+                
+        simtrace = []
+        outcols = {}
+        outcols[self.time_col] = []
+        outcols['duration'] = []
+        outcols['residual'] = []
+        for parameter in self.calib_candidates_dict['parameters']:
+            outcols[parameter] = []
+            
+        glob_start = time.clock()
+        for ti in ti_list:
+            line = self.make_line(ti)
+            
+            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.calib_candidates_dict, disregard)
+            
+            outcols[self.time_col].append(line[0])
+            
+            for parameter in self.calib_candidates_dict['parameters']:
+                outcols[parameter].append(results[parameter])
+            
+            outcols['duration'].append(results['duration'])
+            outcols['residual'].append(results['residual_value'])
+
+            simtrace.append(sim_masses)
+            
+        self.calib_glob_duration = time.clock() - glob_start
+        
+        # do sem sem prisel
+        self.calibcols = {}
+        self.calibcols['index'] = sp.array(ti_list)
+        self.calibcols[self.time_col] = sp.array(outcols[self.time_col])
+        self.calibcols['residual'] = sp.array(outcols['residual'])
+        self.calibcols['duration'] = sp.array(outcols['duration'])
+        self.calibcols['pressure'] = sp.array(outcols['pres'])
+        tablength = len(outcols[self.time_col])
+        if type(ratio_def) in [float, int]:
+            self.calibcols['ratio'] = ratio_def * sp.ones(tablength)
+        else:
+            self.calibcols['ratio'] = sp.array(outcols[self.calib_candidates_dict['ratios'][0]])
+        self.calibcols["peaks"] = {}
+        for i in range(len(peak_defs)):
+            peak_def = peak_defs[i]
+            level = i + 1
+            if type(peak_def) in [float, int]:
+                self.calibcols['peaks'][level] = peak_def * sp.ones(tablength)
+            else:
+                if type(peak_def) == list:
+                    peak_name = peak_def[0]
+                else:
+                    peak_name = peak_def
+                self.calibcols['peaks'][level] = sp.array(outcols[peak_name])
+  
+        self.simtracecol={}
+        for mass in range(1,len(sp.transpose(simtrace))):
+            self.simtracecol[mass] = sp.transpose(simtrace)[mass]
+
+        """self.outtab = []
+        header_line_1 = ['Quantity']
+        header_line_2 = [self.time_col_name]
+        self.outtab.append(self.rescols[self.time_col])
+        for key in self.H_species.keys():
+            header_line_2.append(key)
+            header_line_1.append('Pressure')
+            self.outtab.append(self.rescols[key]['pressure'])
+        for key in self.non_H_species.keys():
+            header_line_2.append(key)
+            header_line_1.append('Pressure')
+            self.outtab.append(self.rescols[key]['pressure'])
+        for key in self.H_species.keys():
+            header_line_2.append(key)
+            header_line_1.append('H/(H+D)')
+            self.outtab.append(self.rescols[key]['ratio'])
+        for key in ['residual','duration']:
+            header_line_1.append('Fitting')
+            header_line_2.append(key)
+            self.outtab.append(outcols[key])
+
+        self.outtab = sp.array(self.outtab)
+        self.outtab = sp.transpose(self.outtab)
+        self.outtab = list(self.outtab)
+        self.outtab = [header_line_2] + [header_line_1] + self.outtab
+
+        massheader = [self.time_col_name]
+        self.outsimtracecol = [sp.array(self.rescols[self.time_col])]
+        for mass in self.masses_of_interest:
+            massheader.append("%s AMU" %mass)
+            self.outsimtracecol.append(self.simtracecol[mass])
+        self.outsimtrace = list(sp.transpose(sp.array(self.outsimtracecol)))
+        self.outsimtrace = [massheader] + self.outsimtrace"""
+        self.calib_tag['title'] = "Calibration for %s" %molecule
+        self.calibrated = True
+        
+         
+        
+    
     def export(self, name=None, write_path=None, rec=False):
         
         if name == None:
@@ -468,6 +589,7 @@ class Profile:
         self.intensity_col = sp.array(intensity_col)
         self.filled = False
         self.deconvoluted = False
+        self.calibrated = False
         if type(tag) != dict:
             self.tag = {'raw_tag':tag}
         else:
@@ -566,8 +688,59 @@ class Profile:
 
         self.devoncoluted = True
         
+    def calibrate(self, molecule, ratio_def, peak_defs, disregard):
         
+        self.calib_tag = {}
+        if type(molecule) == str:
+            try:
+                mol_def_1 = molecules2.H_molecules_d[molecule]
+                rel_int = self.molecules.calib[mol_def_1[0]][-1]
+                mol_def = {'NH_mass': mol_def_1[2], 'nAt': mol_def_1[1], 'rel_int': rel_int}
+            except KeyError:
+                #print "Unknown molecule"
+                pass
+        if type(molecule) == dict:
+            if not set(['NH_mass', 'nAt', 'rel_int']).issubset(set(mol_def.keys())):
+                # print invalid molecule definition
+                pass
+            
+        self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
+        self.calib_masses_of_interest = []
+        for mass in range(1,self.header_int[-1] + 1):
+            if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
+                self.calib_masses_of_interest.append(mass)
         
+        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard)
+        
+        self.calib_line = {}
+        self.calib_line['pressure'] = results['pres']
+        self.calib_line['duration'] = results['duration']
+        self.calib_line['residual'] = results['residual_value']
+        if type(ratio_def) in [float, int]:
+            self.calib_line['ratio'] = ratio_def
+        else:
+            self.calib_line['ratio'] = results[self.calib_candidates_dict['ratios'][0]]
+        self.calib_line["peaks"] = {}
+        for i in range(len(peak_defs)):
+            peak_def = peak_defs[i]
+            level = i + 1
+            if type(peak_def) in [float, int]:
+                self.calib_line['peaks'][level] = peak_def
+            else:
+                if type(peak_def) == list:
+                    peak_name = peak_def[0]
+                else:
+                    peak_name = peak_def
+                self.calib_line['peaks'][level] = results[peak_name]
+        
+           
+      
+        self.sim_MID_col = [sim_masses[mass] for mass in self.calib_masses_of_interest]
+        calib.tag['title'] = "Calibration for %s" %molecule
+        self.calibrated = True
+
+      
+
     def export(self, name=None, write_path=None, rec=False):
     
         

@@ -19,7 +19,8 @@
 
 import scipy as sp
 import math
-import sympy
+#import sympy
+from copy import copy
 
 version = '1.0'
 

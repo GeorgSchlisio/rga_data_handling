@@ -193,7 +193,7 @@ def show_results_trace(in_trace, gas_list=None):
     
     try:
         title = trace.tag['title']
-    except KeyErrror:
+    except KeyError:
         title = "Timetrace plot"
     
     # x axis title

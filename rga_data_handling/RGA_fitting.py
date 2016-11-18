@@ -144,7 +144,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
     
     return candidate_dict
     
-def make_calibration_candidates(mol_def, ratio_def, peak_defs):
+def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     "Construct the candidates and parameters for fit_line"
     # Za fit potrebujem:
     # candidates
