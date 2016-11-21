@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from copy import copy
 version = '1.2'
 
+sz = {'legend': 12, 'legend_mass': 10, 'napis': 12,'label_x': 16, 'label_y': 16, 'tick_x': 14, 'tick_y': 14}
+
 # Risanje posnetih meritev
 
 def plot_data_profile(profile):
@@ -246,6 +248,85 @@ def show_results_trace(in_trace, gas_list=None):
     for plot in [mass_plot, pres_plot]:
         plot.yaxis.get_major_formatter().set_powerlimits((0, 1))
 
+    fig.suptitle(title, fontsize = 16)
+    fig.tight_layout()
+    fig.subplots_adjust(right = 0.8, top = 0.88)
+    plt.show()
+    
+    
+def show_calibration_trace(in_trace):
+    trace = copy(in_trace)
+    masses_of_interest = trace.calib_masses_of_interest
+    columns = trace.columns
+    calibcols = trace.calibcols
+    simtracecol = trace.simtracecol
+    
+    time_col = trace.time_col
+    
+    
+    try:
+        title = trace.calib_tag['title']
+    except KeyError:
+        title = "Timetrace plot"
+    
+    # x axis title
+    x_label = trace.time_col_name
+
+    
+    fig = plt.figure()
+    time_step = sp.mean(sp.diff(columns[time_col]))
+    time_frame = [calibcols[time_col][0] - time_step/2, calibcols[time_col][-1] + time_step/2]
+    
+    # Plot of recorded and simulated masses
+    mass_plot = fig.add_subplot(3,1,1)
+    for mass in masses_of_interest:
+        try:
+            mass_plot.plot(columns[time_col],columns[mass],label = "%s AMU" %mass)
+        except KeyError:
+            mass_plot.plot(columns[time_col],sp.zeros(len(columns['time'])),label = "%s AMU" %mass)
+    plt.gca().set_color_cycle(None)
+    for mass in masses_of_interest:
+        mass_plot.plot(calibcols[time_col],simtracecol[mass],marker = "x", ls = '--')
+    mass_plot.plot(calibcols[time_col],calibcols['residual'],label = 'residual', marker = 'o')
+    mass_plot.set_ylabel("Intensity [arb.u.]", fontsize = sz['label_y'])
+    #mass_plot.set_title("RGA intensities")
+    
+    # Plot of fitted partial pressure and HD ratio
+    pres_plot = fig.add_subplot(3,1,2)
+    HD_plot = pres_plot.twinx()
+    pres_plot.plot(calibcols[time_col], calibcols['pressure'], marker = 'o', label = 'pressure', color = 'blue')
+    HD_plot.plot(calibcols[time_col], calibcols['ratio'], marker = 'o', label = 'H/(H+D)', color = 'red')
+    pres_plot.set_ylabel('pressure [arb.u.]', fontsize = sz['label_y'], color = 'blue')
+    #pres_plot.set_title("Partial pressures")
+    HD_plot.set_ylabel("H/(H+D)", fontsize = sz['label_y'], color = 'red')
+    
+    h1, l1 = pres_plot.get_legend_handles_labels()
+    h2, l2 = HD_plot.get_legend_handles_labels()
+    pres_plot.legend(h1+h2, l1+l2, loc=3, fontsize = sz['legend'])    
+    HD_plot.tick_params(axis='y', colors='red')
+    HD_plot.spines['right'].set_color('red')
+    pres_plot.tick_params(axis='y', colors='blue')
+    HD_plot.spines['left'].set_color('blue')
+
+    # Plot of cracking pattern peaks
+    peak_plot = fig.add_subplot(3,1,3)
+    for peak in sorted(calibcols['peaks'].keys()):
+        peak_plot.plot(calibcols[time_col],calibcols['peaks'][peak],marker = 'o', label = "Peak #%s" %peak)
+    peak_plot.set_ylabel('Relative peak', fontsize = sz['label_y'])
+    #rat_plot.set_title("H/(H+D) ratios")
+    
+    mass_plot.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fontsize = sz['legend_mass'], labelspacing = 0)
+    #pres_plot.legend(bbox_to_anchor=(1.05, 0.7), loc=2, borderaxespad=0., fontsize = sz['legend'], labelspacing = 0)
+    peak_plot.legend(bbox_to_anchor=(1.05, 0.9), loc=2, borderaxespad=0., fontsize = sz['legend'], labelspacing = 0)
+    for plot in [mass_plot, pres_plot, peak_plot]:
+        plot.set_xlim(time_frame)
+        plot.tick_params(axis = 'y', labelsize = sz['tick_y'])
+        plot.tick_params(axis = 'x', labelsize = 0)
+        plot.ticklabel_format(useOffset=False)
+    for plot in [mass_plot, pres_plot]:
+        plot.yaxis.get_major_formatter().set_powerlimits((0, 1))
+    peak_plot.tick_params(axis = 'x', labelsize = sz['tick_x'])
+    peak_plot.set_xlabel(x_label)
     fig.suptitle(title, fontsize = 16)
     fig.tight_layout()
     fig.subplots_adjust(right = 0.8, top = 0.88)

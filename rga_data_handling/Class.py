@@ -474,8 +474,21 @@ class Trace:
         self.calib_tag['title'] = "Calibration for %s" %molecule
         self.calibrated = True
         
-         
+    def subtract_background(self, time_window):
+        """Subtraction of the background, defined as the average value during the specified time window"""
         
+        # This function will override the original columns.     
+        if self.filled:
+  
+            bgr_range = (self.columns[self.time_col] > time_window[1]) * (self.columns[self.time_col] < time_window[1])
+            if list(bgr_range).count(True) > 1:
+                do_bgr = True
+            else:
+                do_bgr = False
+            if do_bgr:
+                for mass in header_int:
+                    columns[mass] = columns[mass] - sp.mean(columns[mass][bgr_range])
+
     
     def export(self, name=None, write_path=None, rec=False):
         
