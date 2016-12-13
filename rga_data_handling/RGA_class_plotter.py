@@ -158,7 +158,8 @@ def show_results_profile(profile):
         plot.yaxis.get_major_formatter().set_powerlimits((0, 1))
     
     #fig.tight_layout()
-    plt.show()
+    #plt.show()
+    return fig
 
 
 def show_results_trace(in_trace, gas_list=None):
@@ -251,7 +252,8 @@ def show_results_trace(in_trace, gas_list=None):
     fig.suptitle(title, fontsize = 16)
     fig.tight_layout()
     fig.subplots_adjust(right = 0.8, top = 0.88)
-    plt.show()
+    #plt.show()
+    return fig
     
     
 def show_calibration_trace(in_trace):
@@ -339,11 +341,16 @@ def plot_data(container, masslist=None):
     if container.type == "Profile":
         return plot_data_profile(container)
     
-def show_results(container, additional=None):
+def show_results(container, additional=None, save_name=None):
     if container.type == "Trace":
-        return show_results_trace(container, additional)
+        fig = show_results_trace(container, additional)
     if container.type == "Profile":
-        return show_results_profile(container)
+        fig = show_results_profile(container)
+    if save_name != None:
+        plt.savefig(save_name, dpi=300)
+        plt.close()
+    else:
+        plt.show()
 
 
 
