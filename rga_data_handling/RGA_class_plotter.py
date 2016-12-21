@@ -33,7 +33,7 @@ def plot_data_profile(profile):
     specplot.set_ylabel("Intensity [arb.u.]")
     specplot.set_title(title)
     specplot.ticklabel_format(useOffset=False)
-    plt.show()
+    #plt.show()
     
 def plot_data_trace(trace, masslist=None):
     
@@ -61,7 +61,7 @@ def plot_data_trace(trace, masslist=None):
     traceplot.set_xlabel(x_label)
     traceplot.set_ylabel("Intensity [arb.u.]")
     traceplot.set_title(title)
-    plt.show()
+    #plt.show()
 
 # Risanje rezultatov
 
@@ -337,9 +337,10 @@ def show_calibration_trace(in_trace):
 # skupna funkcija za profile in trace
 def plot_data(container, masslist=None):
     if container.type == "Trace":
-        return plot_data_trace(container, masslist)
+        fig = plot_data_trace(container, masslist)
     if container.type == "Profile":
-        return plot_data_profile(container)
+        fig = plot_data_profile(container)
+    plt.show()
     
 def show_results(container, additional=None, save_name=None):
     if container.type == "Trace":
