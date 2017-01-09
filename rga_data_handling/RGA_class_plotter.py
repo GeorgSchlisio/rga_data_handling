@@ -304,7 +304,7 @@ def show_calibration_trace(in_trace):
     
     h1, l1 = pres_plot.get_legend_handles_labels()
     h2, l2 = HD_plot.get_legend_handles_labels()
-    pres_plot.legend(h1+h2, l1+l2, loc=3, fontsize = sz['legend'])    
+    pres_plot.legend(h1+h2, l1+l2, bbox_to_anchor=(1.05, 0.7), loc=2, borderaxespad=0., fontsize = sz['legend'], labelspacing = 0)    
     HD_plot.tick_params(axis='y', colors='red')
     HD_plot.spines['right'].set_color('red')
     pres_plot.tick_params(axis='y', colors='blue')
@@ -332,7 +332,8 @@ def show_calibration_trace(in_trace):
     fig.suptitle(title, fontsize = 16)
     fig.tight_layout()
     fig.subplots_adjust(right = 0.8, top = 0.88)
-    plt.show()
+    #plt.show()
+    return fig
 
 # skupna funkcija za profile in trace
 def plot_data(container, masslist=None):
