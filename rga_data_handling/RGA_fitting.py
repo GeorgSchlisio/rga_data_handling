@@ -175,7 +175,7 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
 
     if type(ratio_def) == list:
         if len(ratio_def) != 3:
-            print "Wrong D/(D+H) ratio definition for %s" %mol_name
+            print "Wrong D/(D+H) ratio definition"
             #continue
         else:
             ratio = ratio_def[0]
