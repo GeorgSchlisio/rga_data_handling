@@ -897,3 +897,81 @@ def join_traces(in_trace_list):
     jtrace.simtracecol = stc_j
     
     return jtrace
+    
+    
+# zdruzevanje kalibracijskih rezultatov
+
+def join_traces_calib(in_trace_list):
+
+    tracelist = []
+    for trace in in_trace_list:
+        # najprej sortiranje tracov po zacetnem casu
+        tracelist.append([trace.calibcols[trace.time_col][0], trace, trace.time_col])
+    tracelist = sorted(tracelist)    
+    tc = tracelist[0][2]
+    for entry in tracelist[1:]:
+        if entry[2] != tc:
+            print "Time col not same in all traces."
+
+    calibcols_j = {}
+    peaks_j = []
+    moi_j = []
+    stc_j = {}
+
+    calibcols_j[tc] = sp.array([])
+    calibcols_j['residual'] = sp.array([])
+    calibcols_j['duration'] = sp.array([])
+    calibcols_j['pressure'] = sp.array([])
+    calibcols_j['ratio'] = sp.array([])
+    calibcols_j['peaks'] = {}
+
+
+    for entry in tracelist:
+        trace = entry[1]
+        cc_t = trace.calibcols
+        stc_t = trace.simtracecol
+
+        peaks_t = trace.calibcols['peaks'].keys()
+        moi_t = trace.calib_masses_of_interest
+
+        zerocol_j = sp.zeros(len(calibcols_j[tc]))
+        zerocol_t = sp.zeros(len(cc_t[tc]))
+
+        print "trace starts at: %s, peaks: %s" %(entry[0], ", ".join(map(str, peaks_t)))
+
+        for peak in peaks_j:
+            if peak not in peaks_t:
+                peaks_t.append(peak)
+                cc_t['peaks'][peak] = zerocol_t
+
+
+        for peak in peaks_t:
+            if peak not in peaks_j:
+                peaks_j.append(peak)
+                calibcols_j['peaks'][peak] = zerocol_j
+                
+        for peak in peaks_t:
+            if peak not in peaks_j:
+                simcols_j['peaks'][peak] = zerocol_j
+            calibcols_j['peaks'][peak] = sp.concatenate((calibcols_j['peaks'][peak], cc_t['peaks'][peak]))
+
+        for what in ['duration', 'residual', 'pressure', 'ratio', tc]:
+            calibcols_j[what] = sp.concatenate((calibcols_j[what], cc_t[what]))
+
+        for mass in moi_t:
+            if mass not in moi_j:
+                moi_j.append(mass)
+        for mass in stc_j.keys():
+            if mass not in stc_t.keys():
+                stc_t[mass] = zerocol_t
+        for mass in stc_t.keys():
+            if mass not in stc_j.keys():
+                stc_j[mass] = zerocol_j
+            stc_j[mass] = sp.concatenate((stc_j[mass], stc_t[mass]))
+
+    jtrace = copy(tracelist[0][1])
+    jtrace.calibcols = calibcols_j
+    jtrace.calib_masses_of_interest = moi_j
+    jtrace.simtracecol = stc_j
+    
+    return jtrace
