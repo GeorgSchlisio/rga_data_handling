@@ -6,7 +6,7 @@
 # IPP, Garching
 
 
-version = '2.01'
+version = '2.011'
 versions = {'Class': version}
 
 import molecules2
@@ -480,14 +480,14 @@ class Trace:
         # This function will override the original columns.     
         if self.filled:
   
-            bgr_range = (self.columns[self.time_col] > time_window[1]) * (self.columns[self.time_col] < time_window[1])
+            bgr_range = (self.columns[self.time_col] > time_window[0]) * (self.columns[self.time_col] < time_window[1])
             if list(bgr_range).count(True) > 1:
                 do_bgr = True
             else:
                 do_bgr = False
             if do_bgr:
-                for mass in header_int:
-                    columns[mass] = columns[mass] - sp.mean(columns[mass][bgr_range])
+                for mass in self.header_int:
+                    self.columns[mass] = self.columns[mass] - sp.mean(self.columns[mass][bgr_range])
 
     
     def export(self, name=None, write_path=None, rec=False):
