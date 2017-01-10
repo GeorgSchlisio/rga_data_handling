@@ -361,6 +361,7 @@ class Trace:
         
         self.calib_tag = {}
         if type(molecule) == str:
+            self.calib_tag['title'] = "Calibration of %s for %s" %(self.tag['title'], molecule)
             try:
                 mol_def_1 = molecules2.H_molecules_d[molecule]
                 rel_int = self.molecules.calib[mol_def_1[0]][-1]
@@ -369,6 +370,7 @@ class Trace:
                 #print "Unknown molecule"
                 pass
         if type(molecule) == dict:
+            self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
             if not set(['NH_mass', 'nAt', 'rel_int']).issubset(set(mol_def.keys())):
                 # print invalid molecule definition
                 pass
@@ -471,7 +473,7 @@ class Trace:
             self.outsimtracecol.append(self.simtracecol[mass])
         self.outsimtrace = list(sp.transpose(sp.array(self.outsimtracecol)))
         self.outsimtrace = [massheader] + self.outsimtrace"""
-        self.calib_tag['title'] = "Calibration for %s" %molecule
+        
         self.calibrated = True
         
     def subtract_background(self, time_window):
