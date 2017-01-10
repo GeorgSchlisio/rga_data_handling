@@ -9,7 +9,7 @@ import scipy as sp
 import scipy.optimize as so
 import math
 import time
-import copy
+from copy import copy
 
 
 version = '1.01'
@@ -273,7 +273,7 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard):
         if sum(candidates)[mass] != 0:
             masses_of_interest.append(mass) 
             
-    recorded = copy.copy(recorded_in)
+    recorded = copy(recorded_in)
     for element in disregard:
         if type(element) == int:
             if len(line) >= element:

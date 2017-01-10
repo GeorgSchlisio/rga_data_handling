@@ -12,8 +12,10 @@ versions = {'Class': version}
 import molecules2
 import scipy as sp
 import random
+from copy import copy
 try:
-    from RGA_fitting import *
+    from RGA_fitting import version, check_candidates, make_candidates, check_disregard, export_CP, export_candidates, make_calibration_candidates,
+    fit_line
     versions['RGA_fitting'] = version
     fitting_loaded = True
 except ImportError:
@@ -227,7 +229,7 @@ class Trace:
         #line = self.make_line(ti)
         actual = self.columns[self.time_col][ti]
         MID_col = self.make_MID_col(ti)
-        datatag = copy.copy(self.tag)
+        datatag = copy(self.tag)
         datatag["mode"] = "export from timetrace"
         datatag["wanted"] = "%s: %s" %(self.time_col, wanted)
         datatag["actual"] = "%s: %s" %(self.time_col, actual)
