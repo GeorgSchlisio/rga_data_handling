@@ -334,6 +334,56 @@ def show_calibration_trace(in_trace):
     fig.subplots_adjust(right = 0.8, top = 0.88)
     #plt.show()
     return fig
+    
+def show_calibration_profile(profile):
+    masses_of_interest = profile.calib_masses_of_interest
+    plot_mode = "plot"
+    if len(profile.mass_col) == len(profile.header_int):
+        plot_mode = "bar"
+    mass_col, intensity_col = profile.mass_col, profile.intensity_col
+    title = profile.calib_tag['title']
+    sim_MID_col = profile.sim_MID_col
+    mass_frame = [masses_of_interest[0] - 1, masses_of_interest[-1] + 1]
+    mass_area = (mass_col > mass_frame[0]) * (mass_col < mass_frame[-1])
+    max_int = max(max(intensity_col[mass_area]), max(sim_MID_col))
+    int_frame = [0, 1.1 * max_int]
+    
+    fig = plt.figure()
+    # Plot of recorded spectrum and simulated intensities
+    mass_plot = fig.add_subplot(2,1,1)
+    #plt.bar(sp.array(masses_of_interest) - 0.4, [sim_MID_col[x] for x in masses_of_interest], color = "red", label = "simulated")
+    mass_plot.bar(sp.array(masses_of_interest) - 0.4, sim_MID_col, color = "red", label = "simulated")
+    if plot_mode == "bar":
+        mass_plot.bar(mass_col, intensity_col, label = "recording", color = "blue")
+    elif plot_mode == "plot":    
+        mass_plot.plot(mass_col, intensity_col, label = "recording")
+    mass_plot.legend(loc=2)
+    mass_plot.set_xlim(mass_frame)
+    mass_plot.set_ylim(int_frame)
+    #plt.plot(masses_of_interest, [sim_MID_col[x] for x in masses_of_interest], label = "simulated", linewidth = 0, marker = 'o')
+
+    mass_plot.set_ylabel("Intensity [arb.u.]")
+    mass_plot.set_xlabel("Mass [AMU]")
+
+    # Plot of fitted Cracking Pattern peaks
+   
+    peaks = profile.calib_line['peaks'].keys()
+    peak_vals = [1]
+    for peak in peaks:
+        peak_vals.append(profile.calib_line['peaks'][peak])
+    peaks = sp.array([0] + peaks) + 1
+
+    peak_plot = fig.add_subplot(2,1,2)
+    peak_plot.bar(peaks, peak_vals, color ='r')
+    peak_plot.set_ylabel('Relative peak intensity')
+    
+    fig.suptitle(title, fontsize = 16)
+    for plot in [mass_plot]:
+        plot.yaxis.get_major_formatter().set_powerlimits((0, 1))
+    
+    #fig.tight_layout()
+    #plt.show()
+    return fig
 
 # skupna funkcija za profile in trace
 def plot_data(container, masslist=None):
@@ -354,5 +404,14 @@ def show_results(container, additional=None, save_name=None):
     else:
         plt.show()
 
-
+def show_calibration(container, save_name=None):
+    if container.type == "Trace":
+        fig = show_calibration_trace(container)
+    if container.type == "Profile":
+        fig = show_calibration_profile(container)
+    if save_name != None:
+        plt.savefig(save_name, dpi=300)
+        plt.close()
+    else:
+        plt.show()
 
