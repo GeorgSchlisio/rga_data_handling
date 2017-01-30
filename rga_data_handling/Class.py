@@ -6,7 +6,7 @@
 # IPP, Garching
 
 
-version = '2.011'
+version = '2.012'
 versions = {'Class': version}
 
 # This is an additional comment
