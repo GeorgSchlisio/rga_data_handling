@@ -9,6 +9,8 @@
 version = '2.011'
 versions = {'Class': version}
 
+# This is an additional comment
+
 import molecules2
 import scipy as sp
 import random
