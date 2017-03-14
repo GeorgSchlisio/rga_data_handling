@@ -22,7 +22,7 @@ import math
 #import sympy
 from copy import copy
 
-version = '1.0'
+version = '1.01'
 
 # definition of probability functions for the construction of hydrogen-containing molecules
 
@@ -88,7 +88,21 @@ H_molecules_d['water'] = ['water', 2, 16]
 H_molecules_d['water18'] = ['water', 2, 18]
 H_molecules_d['methane'] = ['methane', 4, 12]
 H_molecules_d['methane13'] = ['methane', 4, 13]
+H_molecules_d['hydrogen'] = ['hydrogen', 2, 0]
 
+# Default calibration
+
+default_calib = {"version": "default", "device": "generic",
+                 "water":[0.23,0.011,0.9],
+                 "ammonia":[0.8,0.075,1.3],
+                 "methane":[0.858,0.156,1.6],
+                 "hydrogen":[0.05,0,1],
+                 "N2":[0.072,0.008,1.0],
+                 "O2":[0.114,0.008,0.96],
+                 "Ar":[0.107,0.003,1.2],
+                 "CO2":[0.114,0.085,1.4],
+                 "CO":[0.045,0.009,1.05],
+                 "Ne":[0.099,0.003,0.23]}
 
 class mass_space:
     
@@ -103,17 +117,10 @@ class mass_space:
     def init_CP(self, CP_spec=None):
         
         got_calib_file = False
+        # If calibration is provided, the default calibration will be overridden.
+        # If the calibration is incomplete, data from default calibration will remain.
         
-        self.calib = {"version": "default", "device": "generic",
-                 "water":[0.23,0.011,0.9],
-                 "ammonia":[0.8,0.075,1.3],
-                 "methane":[0.858,0.156,1.6],
-                 "N2":[0.072,0.008,1.0],
-                 "O2":[0.114,0.008,0.96],
-                 "Ar":[0.107,0.003,1.2],
-                 "CO2":[0.114,0.085,1.4],
-                 "CO":[0.045,0.009,1.05],
-                 "Ne":[0.099,0.003,0.23]}
+        self.calib = default_calib
         if CP_spec != None:
             if type(CP_spec) == str:
                 filename = CP_spec
@@ -126,11 +133,12 @@ class mass_space:
                 # using default values
             elif type(CP_spec) == dict:
                 # TO Do - drugacen handling importa kot pri fajlu
-                self.calib = CP_spec
+                for key in CP_spec.keys():
+                    self.calib[key] = CP_spec[key]
                 #got_calib_file = True
         
         if got_calib_file:
-            self.calib = {}
+            #self.calib = {}
             for line in calib_file:
                 if len(line) == 0:
                     continue
@@ -182,6 +190,13 @@ class mass_space:
             CP["CH4"] = mer*(base[16] + me1*base[15] + me2*base[14])
         except:
             undefined.append("methane")
+            
+        # Hydrogen
+        # Cracking patterns from calibration file
+        try:
+            hy1, hy2, hyr = self.calib["hydrogen"]
+        except:
+            undefined.append("hydrogen")
 
         # Cracking patterns of non-H-containing molecules
         
