@@ -534,12 +534,14 @@ class Trace:
             except KeyError:
                 pulse_start = 0
         if pulse_stop == None:
+            pulse_stop = self.def_val['pulse_stop']
+        if pulse_stop == None:   
             try:
                 pulse_stop = self.columns[self.time_col][-1]
             except AttributeError:
                 pulse_stop = pulse_start
-        else:
-            pulse_stop = self.def_val['pulse_stop']
+            
+            
         
         # Pulse integration of the raw data
         # Datapoints prior to pulse_start will be averaged as background
