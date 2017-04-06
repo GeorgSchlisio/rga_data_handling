@@ -56,7 +56,7 @@ def plot_data_trace(trace, masslist=None):
         list_to_plot = list (set(masslist) & set(trace.header_int))
     for mass in list_to_plot:
         traceplot.plot(trace.columns[trace.time_col], trace.columns[mass], label = "%s AMU" %mass)
-    traceplot.legend()
+    traceplot.legend(loc=0)
     traceplot.yaxis.get_major_formatter().set_powerlimits((0, 1))
     traceplot.set_xlabel(x_label)
     traceplot.set_ylabel("Intensity [arb.u.]")
@@ -386,12 +386,16 @@ def show_calibration_profile(profile):
     return fig
 
 # skupna funkcija za profile in trace
-def plot_data(container, masslist=None):
+def plot_data(container, masslist=None, save_name=None):
     if container.type == "Trace":
         fig = plot_data_trace(container, masslist)
     if container.type == "Profile":
         fig = plot_data_profile(container)
-    plt.show()
+    if save_name != None:
+        plt.savefig(save_name, dpi=300)
+        plt.close()
+    else:
+        plt.show()
     
 def show_results(container, additional=None, save_name=None):
     if container.type == "Trace":
