@@ -120,7 +120,7 @@ class mass_space:
         # If calibration is provided, the default calibration will be overridden.
         # If the calibration is incomplete, data from default calibration will remain.
         
-        self.calib = default_calib
+        self.calib = default_calib.copy()
         if CP_spec != None:
             if type(CP_spec) == str:
                 filename = CP_spec
