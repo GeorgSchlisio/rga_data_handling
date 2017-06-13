@@ -527,7 +527,7 @@ class Trace:
         if rec and self.filled:
             write_to_TSV(recname, outrecording)
             
-    def pulse_integrate(self, pulse_start = None, pulse_stop = None):
+    def pulse_integrate(self, pulse_start = None, pulse_stop = None, remove_bgr = True):
         if pulse_start == None:
             try:
                 pulse_start = self.def_val['pulse_start']
@@ -561,6 +561,8 @@ class Trace:
                     bgr = sp.mean(tempdat[bgr_range])
                     self.background[mass] = bgr
                 else:
+                    bgr = 0
+                if not remove_bgr:
                     bgr = 0
                 int_val = sp.trapz(tempdat[int_range] - bgr, self.columns[self.time_col][int_range])
                 self.pulse_integral[mass] = int_val
