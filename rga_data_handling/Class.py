@@ -986,3 +986,28 @@ def join_traces_calib(in_trace_list):
     jtrace.simtracecol = stc_j
     
     return jtrace
+    
+    
+# Construction of a common molecule signals from different non-H isotopes
+# such as a commomn ammonia signal from 14N- and 15N ammonia signals
+# input:
+# isotope list: [['ammonia14', 'ammonia15']]
+# common: 'ammonia'
+
+def total_isotopes_trace(trace, isotope_list, common):
+    #if common not in trace.rescols.keys():
+    p_col = sp.zeros(len(trace.rescols['index']))
+    r_col = sp.zeros(len(trace.rescols['index']))
+    in_rescols = list(set(trace.rescols.keys()) & set(isotope_list))
+    if len(in_rescols) > 0:
+        trace.rescols[common] = {}
+    for isotope in in_rescols:
+        p_col = p_col + trace.rescols[isotope]['pressure']
+    trace.rescols[common]['pressure'] = p_col
+    try:
+        for isotope in in_rescols:
+            r_col = r_col + trace.rescols[isotope]['ratio'] * trace.rescols[isotope]['pressure'] / p_col
+        trace.rescols[common]['ratio'] = r_col
+    except KeyError:
+        pass
+        
