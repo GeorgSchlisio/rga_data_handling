@@ -493,7 +493,24 @@ class Trace:
             if do_bgr:
                 for mass in self.header_int:
                     self.columns[mass] = self.columns[mass] - sp.mean(self.columns[mass][bgr_range])
-
+                    
+    def correct_offset(self, offset_mass):
+        if type(offset_mass) == int:
+            self.offset_col = self.columns[mass]
+        elif type(offset_mass) == list:
+            self.offset_col = sp.zeros(len(self.columns['index']))
+            for mass in offset_mass:
+                self.offset_col += self.columns[mass]
+            self.offset_col *= 1.0 / len(offset_mass)
+        self.offset_mass = offset_mass
+        
+        for mass in self.header_int:
+            self.columns[mass] -= self.offset_col
+            
+    def clip_negative(self, limit=0):
+        for mass in self.header_int:
+            self.columns[mass] = self.columns[mass].clip(limit)
+  
     
     def export(self, name=None, write_path=None, rec=False):
         
