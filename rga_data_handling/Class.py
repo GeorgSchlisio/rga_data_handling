@@ -496,16 +496,16 @@ class Trace:
                     
     def correct_offset(self, offset_mass):
         if type(offset_mass) == int:
-            self.offset_col = self.columns[offset_mass]
-        elif type(offset_mass) == list:
-            self.offset_col = sp.zeros(len(self.columns['index']))
+            offset_mass = [offset_mass]
+        self.offset_mass = list(set(offset_mass) & set(self.header_int))
+        if len(self.offset_mass) > 0:
+            self.columns['offset'] = sp.zeros(len(self.columns['index']))
             for mass in offset_mass:
-                self.offset_col += self.columns[mass]
-            self.offset_col *= 1.0 / len(offset_mass)
-        self.offset_mass = offset_mass
+                self.columns['offset'] += self.columns[mass]
+            self.columns['offset'] *= 1.0 / len(self.columns['offset'])
         
-        for mass in self.header_int:
-            self.columns[mass] -= self.offset_col
+            for mass in self.header_int:
+                self.columns[mass] -= self.columns['offset']
             
     def clip_negative(self, limit=0):
         for mass in self.header_int:
