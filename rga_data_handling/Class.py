@@ -502,7 +502,7 @@ class Trace:
             self.columns['offset'] = sp.zeros(len(self.columns['index']))
             for mass in offset_mass:
                 self.columns['offset'] += self.columns[mass]
-            self.columns['offset'] *= 1.0 / len(self.columns['offset'])
+            self.columns['offset'] *= 1.0 / len(self.offset_mass)
         
             for mass in self.header_int:
                 self.columns[mass] -= self.columns['offset']
