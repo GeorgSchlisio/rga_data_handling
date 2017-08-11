@@ -12,7 +12,7 @@ import time
 from copy import copy
 
 
-version = '1.01'
+version = '1.02'
 
 def check_candidates(hydrogen_species,non_H_species):
     #check if format of candidate molecules is OK
@@ -292,7 +292,10 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard):
     try:
         maxvalexp = math.ceil(-math.log10(max(line[1:])))
     except ValueError:
-        maxvalexp = math.ceil(-math.log10(-min(line[1:])))
+        try:
+            maxvalexp = math.ceil(-math.log10(-min(line[1:])))
+        except ValueError:
+            maxvalexp = 0
     maxval = 10**maxvalexp
     
     ansatz = sum(candidates)
