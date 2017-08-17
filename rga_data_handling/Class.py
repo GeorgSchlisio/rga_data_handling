@@ -273,6 +273,9 @@ class Trace:
                 self.masses_of_interest.append(mass)
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
+        if len(ti_list) == 0:
+            self.glob_duration = 0
+            return
         ti_list = range(ti_list[0],ti_list[-1]+1,step)  
         
                 
@@ -385,6 +388,9 @@ class Trace:
                 self.calib_masses_of_interest.append(mass)
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
+        if len(ti_list) == 0:
+            self.glob_duration = 0
+            return
         ti_list = range(ti_list[0],ti_list[-1]+1,step)  
         
                 
