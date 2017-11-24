@@ -38,7 +38,7 @@ def fit_many_times(container,times,perturb,to_join,*args):
     for i in range(num_of_goes):
         print " | %s" %(i + 1),
         container.replace_CP('')
-        perturb_CP(container, 0.10)
+        perturb_CP(container, perturb)
         container.deconvolute(*args)
         if make_total:
             for j in range(len(common_list)):
