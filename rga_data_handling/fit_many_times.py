@@ -25,6 +25,8 @@ def fit_many_times(container,times,perturb,to_join,*args):
     traces = []
     tot_dur = 0
     num_of_goes = times
+    # store the original containers cracking patterns
+    CP_orig = container.molecules.calib.copy()
     try:
         common_list = to_join[1]
         isotopes_list = to_join[0]
@@ -37,7 +39,10 @@ def fit_many_times(container,times,perturb,to_join,*args):
     print "Doing %s for %s :" %(num_of_goes, container.tag['title'])
     for i in range(num_of_goes):
         print " | %s" %(i + 1),
-        container.replace_CP('')
+        # make a new copy of the original CP,
+        # otherwise perturb_CP will override the original copy as well
+        CP_new = CP_orig.copy()
+        container.replace_CP(CP_new)
         perturb_CP(container, perturb)
         container.deconvolute(*args)
         if make_total:
