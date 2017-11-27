@@ -20,7 +20,7 @@
 import scipy as sp
 import math
 #import sympy
-from copy import copy
+from copy import deepcopy
 
 version = '1.01'
 
@@ -40,7 +40,7 @@ def branch_one(orig):
         if orig[atom] == 0:
             continue
         prob = float(orig[atom]) / sum(orig.values())
-        br = copy(orig)
+        br = deepcopy(orig)
         br[atom] -= 1
         branch.append([prob, br])
     return branch
@@ -120,7 +120,7 @@ class mass_space:
         # If calibration is provided, the default calibration will be overridden.
         # If the calibration is incomplete, data from default calibration will remain.
         
-        self.calib = default_calib.copy()
+        self.calib = deepcopy(default_calib)
         if CP_spec != None:
             if type(CP_spec) == str:
                 filename = CP_spec

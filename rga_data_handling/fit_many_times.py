@@ -8,7 +8,7 @@
 # aleksander.drenik@ipp.mpg.de
 
 from Class import perturb_CP
-from copy import copy
+from copy import deepcopy
 import matplotlib.pyplot as plt
 import scipy as sp
 from os import path
@@ -26,7 +26,8 @@ def fit_many_times(container,times,perturb,to_join,*args):
     tot_dur = 0
     num_of_goes = times
     # store the original containers cracking patterns
-    CP_orig = container.molecules.calib.copy()
+    CP_orig = deepcopy(container.molecules.calib)
+    container_orig = deepcopy(container)
     try:
         common_list = to_join[1]
         isotopes_list = to_join[0]
@@ -41,15 +42,16 @@ def fit_many_times(container,times,perturb,to_join,*args):
         print " | %s" %(i + 1),
         # make a new copy of the original CP,
         # otherwise perturb_CP will override the original copy as well
-        CP_new = CP_orig.copy()
-        container.replace_CP(CP_new)
-        perturb_CP(container, perturb)
-        container.deconvolute(*args)
+        CP_new = deepcopy(CP_orig)
+        container_new = deepcopy(container_orig)
+        container_new.replace_CP(CP_new)
+        perturb_CP(container_new, perturb)
+        container_new.deconvolute(*args)
         if make_total:
             for j in range(len(common_list)):
-                total_isotopes(container, isotopes_list[j], common_list[j])
-        traces.append(copy(container))
-        tot_dur += container.glob_duration
+                total_isotopes(container_new, isotopes_list[j], common_list[j])
+        traces.append(container_new)
+        tot_dur += container_new.glob_duration
     print "deconvolution done, total duration %s seconds" %tot_dur
     return traces
     

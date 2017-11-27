@@ -12,7 +12,7 @@ versions = {'Class': version}
 import molecules2
 import scipy as sp
 import random
-from copy import copy
+from copy import deepcopy
 import time
 
 try:
@@ -230,7 +230,7 @@ class Trace:
         #line = self.make_line(ti)
         actual = self.columns[self.time_col][ti]
         MID_col = self.make_MID_col(ti)
-        datatag = copy(self.tag)
+        datatag = deepcopy(self.tag)
         datatag["mode"] = "export from timetrace"
         datatag["wanted"] = "%s: %s" %(self.time_col, wanted)
         datatag["actual"] = "%s: %s" %(self.time_col, actual)
@@ -923,7 +923,7 @@ def join_traces(in_trace_list):
                 stc_j[mass] = zerocol_j
             stc_j[mass] = sp.concatenate((stc_j[mass], stc_t[mass]))
 
-    jtrace = copy(tracelist[0][1])
+    jtrace = deepcopy(tracelist[0][1])
     jtrace.rescols = rescols_j
     jtrace.H_species = HM_j
     jtrace.non_H_species = NHM_j
@@ -1003,7 +1003,7 @@ def join_traces_calib(in_trace_list):
                 stc_j[mass] = zerocol_j
             stc_j[mass] = sp.concatenate((stc_j[mass], stc_t[mass]))
 
-    jtrace = copy(tracelist[0][1])
+    jtrace = deepcopy(tracelist[0][1])
     jtrace.calibcols = calibcols_j
     jtrace.calib_masses_of_interest = moi_j
     jtrace.simtracecol = stc_j
