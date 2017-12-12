@@ -259,7 +259,7 @@ def check_disregard(disregard):
 # input: line, recorded, header_int, Hspecies, nonHspecies, disregard
 # output: results(dictionary), calculated_masses
 
-def fit_line(line, recorded_in, header_int, candidates_dict, disregard):
+def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0):
 
     candidates = candidates_dict["candidates"]
     par_all = candidates_dict["parameters"]
@@ -318,7 +318,11 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard):
         return sp.array(output)
     
     start_time = time.clock()
-    rez = so.minimize(residual,init_vals,bounds=boundaries,method='L-BFGS-B')
+    # if more than 0 iterations are specified, use the basinhopping function
+    if n_iter == 0:
+        rez = so.minimize(residual,init_vals,bounds=boundaries,method='L-BFGS-B')
+    else:
+        rez = so.basinhopping(residual, init_vals, niter = n_iter, minimizer_kwargs = dict(method='L-BFGS-B', bounds=boundaries))
     residual_value = math.sqrt(rez.fun*maxval**-2)
     loc_duration = time.clock() - start_time
 

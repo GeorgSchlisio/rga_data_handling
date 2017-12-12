@@ -258,7 +258,7 @@ class Trace:
         
         self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
         
-    def deconvolute(self, H_species, non_H_species, disregard, start_time, stop_time, step):
+    def deconvolute(self, H_species, non_H_species, disregard, start_time, stop_time, step, n_iter=0):
         self.H_species = H_species
         self.non_H_species = non_H_species
         self.disregard = disregard
@@ -291,7 +291,7 @@ class Trace:
         for ti in ti_list:
             line = self.make_line(ti)
             
-            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.candidates_dict, disregard)
+            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
             
             outcols[self.time_col].append(line[0])
             for prs in self.pressures:
@@ -363,7 +363,7 @@ class Trace:
         self.outsimtrace = [massheader] + self.outsimtrace
         self.deconvoluted = True
         
-    def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step):
+    def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step, n_iter=0):
         
         self.calib_tag = {}
         if type(molecule) == str:
@@ -406,7 +406,7 @@ class Trace:
         for ti in ti_list:
             line = self.make_line(ti)
             
-            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.calib_candidates_dict, disregard)
+            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
             
             outcols[self.time_col].append(line[0])
             
@@ -687,7 +687,7 @@ class Profile:
         
         self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
         
-    def deconvolute(self, H_species, non_H_species, disregard):
+    def deconvolute(self, H_species, non_H_species, disregard, n_iter=0):
         self.H_species = H_species
         self.non_H_species = non_H_species
         self.disregard = disregard
@@ -702,7 +702,7 @@ class Profile:
                 self.masses_of_interest.append(mass)
         
         
-        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard)
+        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
         
         resline = {}
         for prs in self.pressures:
@@ -733,7 +733,7 @@ class Profile:
 
         self.devoncoluted = True
         
-    def calibrate(self, molecule, ratio_def, peak_defs, disregard):
+    def calibrate(self, molecule, ratio_def, peak_defs, disregard, n_iter=0):
         
         self.calib_tag = {}
         if type(molecule) == str:
@@ -757,7 +757,7 @@ class Profile:
             if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
                 self.calib_masses_of_interest.append(mass)
         
-        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard)
+        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
         
         self.calib_line = {}
         self.calib_line['pressure'] = results['pres']
