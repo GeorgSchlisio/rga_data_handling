@@ -1,4 +1,8 @@
 # RGA data container class
+# Two RGA data containter classes: profile (intensity vs mass) and time trace (intensity vs time at specific masses)
+# Basic data-processing functions are included in this module
+# Mass-space and cracking pattern functions are imported from molecules2
+# Fitting imported from RGA_fitting
 
 # Aug 2016
 # Aleksander Drenik
@@ -27,7 +31,7 @@ from os import path, mkdir
 
 versions['molecules'] = molecules2.version
 
-known_time_labels = ['time', 'hours']
+known_time_labels = ['time', 'hours'] # labels of columns which are automatically recognized as time columns in the Trace class
 
 # Import the default values
 
@@ -66,24 +70,28 @@ def load_default_values(default_values):
     return default
 
 def pin_point(input_list, sought_value):
+    """Return the index of the element in input_list closest to sought_value"""
     input_col = sp.array(input_list)
     temp_list = list(map(abs, input_col - sought_value))
     nearest_index = temp_list.index(min(temp_list))
     return nearest_index
     
 def write_to_TSV(path, inputlist):
+    """Write a 2D matrix as a TSV file, saved to path"""
     outfile = open(path,'w')
     for line in inputlist:
         outfile.writelines("%s\r\n" %("\t".join(map(str,line))))
     outfile.close()
 
 def PadRight(inputlist, TargetLength, FillValue):
+    """Append FillValue to inputlist until length(inputlist) == TargetLength"""
     if len(inputlist) < TargetLength:
         return inputlist + [FillValue] * (TargetLength - len(inputlist))
     else:
         return inputlist
 
 def perturb_CP(container, perturbation):
+    """Perturb the cracking pattern loaded in the container with the magnitude of perturbation"""
     CP_new = container.molecules.calib
     for key in CP_new.keys():
         entry = CP_new[key]
@@ -98,36 +106,41 @@ def perturb_CP(container, perturbation):
 
 
 class Trace:
-    # data handler - napisi vec
+    # RGA data container for time trace shaped data
+    # Data is provided as a dictionary in 'columns'
+    # column names: if in known_time_labels the column will be assigned as a time column
+    # column names: integers - will be assigned as intensity recordings and added to header_int
+    # Other information about the data is provided in the tag (as dictionary)
     # Internal errors: tag['init_errors']
     # 101: empty or invalid data dictionary
     # 102: empty data columns
     # 103: empty header_int
     
     def __init__(self, columns, tag, default=None):
+        """Create a Trace object and fill it with data"""
         
         self.type = "Trace"
         self.columns = {}
-        self.filled = False
-        self.deconvoluted = False
-        self.calibrated = False
-        bloc_len = 0
+        self.filled = False # Trace contains data (Boolean)
+        self.deconvoluted = False # deconvolute function has been used on the data
+        self.calibrated = False # calibrate function has been used on the data
+        bloc_len = 0 # length of shortest data column
         
+        # Load the default values for the object
         if default == None:
             self.def_val = load_default_values({})
         else:
             self.def_val = load_default_values(default)
         
-        if type(tag) != dict:
-            self.tag = {'raw_tag':tag}
+        if type(tag) != dict: # if tag is not provided in the correct format
+            self.tag = {'raw_tag':tag} # store it anyway
         else:
             self.tag = tag
-        self.tag['init_errors'] = []
-        # najprej iz columnsov izlusci stolpce z maso in ostale stolpce
-        header_int = []
-        lengths = {}
+        self.tag['init_errors'] = [] # Errors encountered in Trace.__init__
+        header_int = [] # List of recorded masses, represented by integers
+        lengths = {} # Lengths of all of the columns
         for key in columns.keys():
-            # preverimo tudi, ce so vsi stolpci enake dolzine
+            # Check if all columns have the same length
             lengths[key] = len(columns[key])
             try:
                 value = int(key)
@@ -138,33 +151,36 @@ class Trace:
         if len(header_int) == 0:
             self.tag['init_errors'].append(103)
         try:        
-            bloc_len = min(lengths.values())
+            bloc_len = min(lengths.values()) # shortest column length
             for key in self.columns.keys():
+                # If a column is longer than the shortest column (bloc_len)
+                # drop any datapoints beyond bloc_len
                 self.columns[key] = self.columns[key][:bloc_len]
-            if bloc_len == 0:
+            if bloc_len == 0: # at least one zero-lenght column was included in the data
                 self.tag['init_errors'].append(102)
         except ValueError:
             self.tag['init_errors'].append(101)
-        # naredi stolpec z indexi vrstic
+        # Create the column of indices of datapoints
         self.columns['index'] = sp.arange(bloc_len)
         if len(header_int) > 0 and bloc_len > 0:
-            self.filled = True
-
-            
+            self.filled = True # Trace contains technically OK data
+            # set the time column
             time_col_candidates = list(set(self.columns.keys()) & set(known_time_labels))
             try:
                 self.set_timecol(time_col_candidates[0])
-            except:            
+            except:
+                # if no label is recognized, set the index column as the time column
                 self.set_timecol('index')
 
-            # Konstrukcija recorded
+            # Construction of the 'recorded' array
             self.header_int = sp.array(sorted(header_int))
             self.recorded = sp.zeros(self.header_int[-1] + 1)
             for i in range(self.header_int[-1] + 1):
                 if i in self.header_int:
                     self.recorded[i] = 1
 
-            # ime objekta - ce ni v tag-u, se avtoimenuje
+            # Title of the Trace object
+            # If 'title' is not provided in the tag, use default value
             if 'title' not in self.tag.keys():
                 self.tag['title'] = self.def_val['trace_name']
                 
@@ -175,10 +191,12 @@ class Trace:
             
             
     def replace_CP(self, path):
+        """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
         if self.filled:
             self.molecules.init_CP(path)    
             
     def set_timecol(self, time_key):
+        """Designate one of the columns as the time column"""
         if time_key in self.columns.keys():
             self.time_col = time_key
             self.time_col_name = self.time_col.capitalize()
@@ -208,7 +226,7 @@ class Trace:
     
     def make_results_line(self, ti):
     # Produce a profile-like dictionary with results from the deconvolution.
-    # Fro the ti-th line in the results time-trace
+    # From the ti-th line in the results time-trace
         resline = {}
         for gas in self.H_species.keys():
             resline[gas] = {'pressure': self.rescols[gas]['pressure'][ti], 'ratio': self.rescols[gas]['ratio'][ti]}
@@ -226,6 +244,7 @@ class Trace:
 
     
     def Make_Profile(self, wanted):
+        """Create a Profile object from a timeslice of the data, at time closest to wanted"""
         ti = pin_point(self.columns[self.time_col], wanted)
         #line = self.make_line(ti)
         actual = self.columns[self.time_col][ti]
@@ -255,10 +274,11 @@ class Trace:
         return profile
     
     def make_candidates(self):
-        
+        """Make data fitting candidates"""
         self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
         
     def deconvolute(self, H_species, non_H_species, disregard, start_time, stop_time, step, n_iter=0):
+        """Deconvolute the data with H_species and non_H_species"""
         self.H_species = H_species
         self.non_H_species = non_H_species
         self.disregard = disregard
