@@ -125,6 +125,7 @@ class Trace:
         self.deconvoluted = False # deconvolute function has been used on the data
         self.calibrated = False # calibrate function has been used on the data
         bloc_len = 0 # length of shortest data column
+        self.echo = True
         
         # Load the default values for the object
         if default == None:
@@ -382,6 +383,8 @@ class Trace:
         self.outsimtrace = list(sp.transpose(sp.array(self.outsimtracecol)))
         self.outsimtrace = [massheader] + self.outsimtrace
         self.deconvoluted = True
+        if self.echo:
+            print "Deconvolutiuon for %s done, duration %s s." %(self.tag['title'], self.glob_duration)
         
     def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step, n_iter=0):
         
