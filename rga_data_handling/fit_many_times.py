@@ -44,6 +44,7 @@ def fit_many_times(container,times,perturb,to_join,*args):
         # otherwise perturb_CP will override the original copy as well
         CP_new = deepcopy(CP_orig)
         container_new = deepcopy(container_orig)
+        container_new.echo = False
         container_new.replace_CP(CP_new)
         perturb_CP(container_new, perturb)
         container_new.deconvolute(*args)
