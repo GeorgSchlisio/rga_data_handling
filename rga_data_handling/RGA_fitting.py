@@ -72,6 +72,26 @@ def check_candidates(hydrogen_species,non_H_species):
 
     return errors
 
+
+class candidates:
+    
+    def __init__(self, molecules, H_species, non_H_species):
+        
+        self.candidates = []
+        self.ratios = []
+        self.pressures = []
+        self.parameters = []
+        self.pressure_boundaries = []
+        self.ratio_boundaries = []
+        self.init_vals = []
+        
+    def prepare_pressure(self, pres_def):
+        """Prepare the fitting parameters for partial pressure"""
+        pressure = pres_def[0]
+        mol_name = 
+        
+        
+
 def make_candidates(molecules, hydrogen_species, non_H_species):
 
     candidates = []
@@ -79,18 +99,29 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
     parameters = []
     pressures = []
     ratios = []
-    boundaries = []
+    pressure_boundaries = []
+    ratio_boundaries = []
     init_vals = []
     for key in hydrogen_species.keys():
         specimen = hydrogen_species[key]
-        pressure = specimen[0]
+        pressure_raw = specimen[0]
+        
+        if type(pressure_raw) == list:
+            if len(pressure_raw) != 3:
+                # error, invalid pressure definition
+                continue
+            pressure = pressure_raw[0]
+            pres_bnd = pressure_raw[1:]
+        elif type(pressure_raw) == str:
+            pressure = pressure_raw
+            pres_bnd = [0,None]        
         mol_name = specimen[1]
         ratio_raw = specimen[2]
         if pressure not in parameters:
             local_parameters = [pressure]
             parameters.append(pressure)
             pressures.append(pressure)
-            boundaries.append([0,None])
+            presure_boundaries.append(pres_bnd)
             init_vals.append(1)
         #preveri, da je izotopsko razmerje v redu
         if type(ratio_raw) == list:
@@ -104,7 +135,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
                     local_parameters.append(ratio)
                     parameters.append(ratio)
                     ratios.append(ratio)
-                    boundaries.append(ratio_bnd)
+                    ratio_boundaries.append(ratio_bnd)
                     init_vals.append(0.5)
         elif type(ratio_raw) == str:
             ratio = ratio_raw
@@ -113,7 +144,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
                 local_parameters.append(ratio)
                 parameters.append(ratio)
                 ratios.append(ratio)
-                boundaries.append(ratio_bnd)
+                ratio_boundaries.append(ratio_bnd)
                 init_vals.append(0.5)
         elif type(ratio_raw) in [int,float]:
             ratio = ratio_raw
