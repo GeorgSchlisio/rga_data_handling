@@ -4,12 +4,14 @@
 # IJS, Ljubljana
 # IPP, Garching
 
+# to je delovna verzija - branch new_candidates
+
 import sympy
 import scipy as sp
 import scipy.optimize as so
 import math
 import time
-from copy import copy
+from copy import deepcopy
 
 
 version = '1.02'
