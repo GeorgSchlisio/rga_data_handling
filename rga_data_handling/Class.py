@@ -323,7 +323,7 @@ class Trace:
             outcols['duration'].append(results['duration'])
 
             simtrace.append(sim_masses)
-            
+        #return outcols    
         self.glob_duration = time.clock() - glob_start
         
         self.rescols = {}
@@ -334,7 +334,11 @@ class Trace:
         tablength = len(outcols[self.time_col])
         for key in self.H_species.keys():
             self.rescols[key]={}
-            self.rescols[key]['pressure'] = sp.array(outcols[self.H_species[key][0]])
+            if type(self.H_species[key][0]) == list:
+                pres_name = self.H_species[key][0][0]
+            elif type(self.H_species[key][0]) == str:
+                pres_name = self.H_species[key][0]
+            self.rescols[key]['pressure'] = sp.array(outcols[pres_name])
             if type(self.H_species[key][2]) == list:
                 self.rescols[key]['ratio'] = sp.array(outcols[self.H_species[key][2][0]])
             elif type(self.H_species[key][2]) == str:
@@ -343,7 +347,12 @@ class Trace:
                 self.rescols[key]['ratio'] = self.H_species[key][2] * sp.ones(tablength)
         for key in self.non_H_species.keys():
             self.rescols[key]={}
-            self.rescols[key]['pressure'] = sp.array(outcols[self.non_H_species[key][0]])
+            pres_def = self.non_H_species[key][0]
+            if type(pres_def) == list:
+                pres_name = pres_def[0]
+            elif type(pres_def) == str:
+                pres_name = pres_def
+            self.rescols[key]['pressure'] = sp.array(outcols[pres_name])
             
         self.simtracecol={}
         for mass in range(1,len(sp.transpose(simtrace))):
@@ -443,7 +452,6 @@ class Trace:
             
         self.calib_glob_duration = time.clock() - glob_start
         
-        # do sem sem prisel
         self.calibcols = {}
         self.calibcols['index'] = sp.array(ti_list)
         self.calibcols[self.time_col] = sp.array(outcols[self.time_col])
