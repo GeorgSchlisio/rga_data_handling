@@ -884,8 +884,11 @@ class Profile:
 # zdruzevanje rezultatov fita v enem trejsu
 
 def join_traces(in_trace_list):
-
+    # error messages:
+    # 101 - Time column not the same in all traces
+    err = 0
     tracelist = []
+    parameters = []
     for trace in in_trace_list:
         # najprej sortiranje tracov po zacetnem casu
         tracelist.append([trace.rescols[trace.time_col][0], trace, trace.time_col])
@@ -893,6 +896,7 @@ def join_traces(in_trace_list):
     tc = tracelist[0][2]
     for entry in tracelist[1:]:
         if entry[2] != tc:
+            err = 101
             print "Time col not same in all traces."
 
     rescols_j = {}
@@ -907,6 +911,9 @@ def join_traces(in_trace_list):
 
 
     for entry in tracelist:
+        sub_param = {}
+        start_t = entry[0]
+        sub_param['start time'] = start_t
         trace = entry[1]
         rc_t = trace.rescols
         stc_t = trace.simtracecol
@@ -914,11 +921,15 @@ def join_traces(in_trace_list):
         HM_t = trace.H_species
         NHM_t = trace.non_H_species
         moi_t = trace.masses_of_interest
+        sub_param['H_molecules'] = HM_t
+        sub_param['non_H_molecules'] = NHM_t
+        
+        parameters.append(sub_param)
 
         zerocol_j = sp.zeros(len(rescols_j[tc]))
         zerocol_t = sp.zeros(len(rc_t[tc]))
 
-        print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(entry[0], ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
+        print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
 
         for gas in HM_j.keys():
             if gas not in HM_t.keys():
@@ -960,8 +971,9 @@ def join_traces(in_trace_list):
     jtrace.non_H_species = NHM_j
     jtrace.masses_of_interest = moi_j
     jtrace.simtracecol = stc_j
+    jtrace.joined_parameters = parameters
     
-    return jtrace
+    return err, jtrace
     
     
 # zdruzevanje kalibracijskih rezultatov
