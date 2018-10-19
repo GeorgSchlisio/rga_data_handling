@@ -697,12 +697,12 @@ class Profile:
             last_mass = 0
         
         self.header_int = []
-        self.recorded = sp.zeros(last_mass + 1)
+        #self.recorded = sp.zeros(last_mass + 1)
         self.MID_col = sp.zeros(last_mass + 1)
         for mass in range(first_mass, last_mass + 1):
             temp_area = (self.mass_col > mass - 0.5) * (self.mass_col < mass + 0.5)
             if list(temp_area).count(True) > 0:
-                self.recorded[mass] = 1
+                #self.recorded[mass] = 1
                 self.header_int.append(mass)
                 intensity = max(self.intensity_col[temp_area])
                 self.MID_col[mass] = intensity
@@ -739,10 +739,18 @@ class Profile:
         self.pressures = self.candidates_dict['pressures']
         self.ratios = self.candidates_dict['ratios']
         self.masses_of_interest = []
-        for mass in range(1,self.header_int[-1] + 1):
+        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
+        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
         
+        # construction of the recorded array
+        # now based on the masses_of_interest        
+        
+        self.recorded = sp.zeros(max(self.masses_of_interest) + 1)
+        for i in range(self.header_int[-1] + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
         
