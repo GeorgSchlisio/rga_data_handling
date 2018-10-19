@@ -173,12 +173,11 @@ class Trace:
                 # if no label is recognized, set the index column as the time column
                 self.set_timecol('index')
 
-            # Construction of the 'recorded' array
+            
             self.header_int = sp.array(sorted(header_int))
-            self.recorded = sp.zeros(self.header_int[-1] + 1)
-            for i in range(self.header_int[-1] + 1):
-                if i in self.header_int:
-                    self.recorded[i] = 1
+            # Construction of the 'recorded' array
+            # moved to deconvolute
+
 
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
@@ -296,6 +295,14 @@ class Trace:
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
         self.candidates_dict['masses_of_interest'] = self.masses_of_interest
+        
+        # construction of the recorded array
+        # now based on the masses_of_interest        
+        
+        self.recorded = sp.zeros(max(self.masses_of_interest) + 1)
+        for i in range(self.header_int[-1] + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:
