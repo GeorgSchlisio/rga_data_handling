@@ -292,7 +292,7 @@ class Trace:
         self.pressures = self.candidates_dict['pressures']
         self.ratios = self.candidates_dict['ratios']
         self.masses_of_interest = []
-        for mass in range(1,len(sum(candidates))):
+        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
         self.candidates_dict['masses_of_interest'] = self.masses_of_interest
