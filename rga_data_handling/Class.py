@@ -210,7 +210,10 @@ class Trace:
     # e.g. line[28] returns the recording at 28 AMU
     
         line = [self.columns[self.time_col][ti]]
-        for mass in range(1,self.header_int[-1]+1):
+        # testno - mase morajo iti do zadnje mase v masses_of_interest
+        last_mass = max(self.masses_of_interest)        
+        #for mass in range(1,self.header_int[-1]+1):
+        for mass in range(1, last_mass + 1):
             if mass in self.header_int:
                 line.append(self.columns[mass][[ti]])
             else:
@@ -289,9 +292,10 @@ class Trace:
         self.pressures = self.candidates_dict['pressures']
         self.ratios = self.candidates_dict['ratios']
         self.masses_of_interest = []
-        for mass in range(1,self.header_int[-1] + 1):
+        for mass in range(1,len(sum(candidates))):
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
+        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:

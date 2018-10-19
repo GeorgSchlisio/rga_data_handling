@@ -303,13 +303,15 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     par_rat = candidates_dict["ratios"]
     boundaries = candidates_dict["boundaries"]
     init_vals = candidates_dict["init_vals"]
-        
-    masses_of_interest = []
+    masses_of_interest = candidates_dict["masses_of_interest"]
+    
+    # testno - masses of interest se prebere iz candidates_dict    
+    #masses_of_interest = []
     
     # tukaj sem ven vrgel header int - ce dela, ga lahko dam ven iz argumentov.
-    for mass in range(1,len(sum(candidates))):
-        if sum(candidates)[mass] != 0:
-            masses_of_interest.append(mass) 
+    #for mass in range(1,len(sum(candidates))):
+    #    if sum(candidates)[mass] != 0:
+    #        masses_of_interest.append(mass) 
             
     recorded = deepcopy(recorded_in)
     for element in disregard:
