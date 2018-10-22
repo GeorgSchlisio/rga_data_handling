@@ -19,7 +19,7 @@ import pickle
 
 default_sz = {'legend': 10, 'label_x': 14, 'label_y': 14, 'tick_x': 14, 'tick_y': 14}
 
-def fit_many_times(container,times,perturb,to_join,*args):
+def fit_many_times(container,times,perturb,to_join,*args,**kwargs):
     if args == None:
         return []
     traces = []
@@ -47,7 +47,7 @@ def fit_many_times(container,times,perturb,to_join,*args):
         container_new.echo = False
         container_new.replace_CP(CP_new)
         perturb_CP(container_new, perturb)
-        container_new.deconvolute(*args)
+        container_new.deconvolute(*args, **kwargs)
         if make_total:
             for j in range(len(common_list)):
                 total_isotopes(container_new, isotopes_list[j], common_list[j])
@@ -103,7 +103,9 @@ def povpreci(sims):
     povp_res['defs'] = {'HM': HM, 'NHM': NHM, 'title': title, 'time_col': tc_name}
     return povp_res
     
-def errorbar_results(povprecni, sz=default_sz, lp=2, gl=None):
+def errorbar_results(povprecni, sz=default_sz, lp=2, gl=None, ratio_limit=None):
+    
+    # TO DO - kaj s casovno skalo...
     
     slika = plt.figure()
     pres = slika.add_subplot(211)
@@ -141,7 +143,9 @@ def errorbar_results(povprecni, sz=default_sz, lp=2, gl=None):
         plot.tick_params(axis = 'x', labelsize = 0)
         plot.tick_params(axis = 'y', labelsize = sz['tick_y'])
     rat.set_xlabel('Time [s]', fontsize = sz['label_x'])
-    rat.set_ylim([0, 1.05])
+    if ratio_limit != None:
+        rat.set_ylim(ratio_limit)
+    #rat.set_ylim([0, 1.05])
     rat.tick_params(axis = 'x', labelsize = sz['tick_x'])
     slika.suptitle(title, fontsize = sz['label_y'])
     slika.tight_layout(h_pad = -0.25)
