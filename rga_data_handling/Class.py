@@ -299,8 +299,8 @@ class Trace:
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recorded = sp.zeros(max(self.masses_of_interest) + 1)
-        for i in range(self.header_int[-1] + 1):
+        self.recorded = sp.zeros(max(self.header_int) + 1)
+        for i in range(max(self.header_int) + 1):
             if i in self.header_int:
                 self.recorded[i] = 1
         
@@ -747,7 +747,7 @@ class Profile:
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recorded = sp.zeros(max(self.masses_of_interest) + 1)
+        self.recorded = sp.zeros(max(self.header_int) + 1)
         for i in range(self.header_int[-1] + 1):
             if i in self.header_int:
                 self.recorded[i] = 1
