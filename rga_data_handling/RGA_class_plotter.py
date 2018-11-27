@@ -215,7 +215,7 @@ def show_results_trace(in_trace, gas_list=None):
         try:
             mass_plot.plot(columns[time_col],columns[mass],label = "%s AMU" %mass)
         except KeyError:
-            mass_plot.plot(columns[time_col],sp.zeros(len(columns['time'])),label = "%s AMU" %mass)
+            mass_plot.plot(columns[time_col],sp.zeros(len(columns[time_col])),label = "%s AMU" %mass)
     plt.gca().set_color_cycle(None)
     for mass in masses_of_interest:
         mass_plot.plot(rescols[time_col],simtracecol[mass],marker = "x", ls = '--')
