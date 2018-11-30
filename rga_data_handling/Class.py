@@ -10,7 +10,7 @@
 # IPP, Garching
 
 
-version = '2.012'
+version = '2.1'
 versions = {'Class': version}
 
 import molecules3 as molecules2

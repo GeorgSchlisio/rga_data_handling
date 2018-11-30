@@ -15,7 +15,7 @@ import time
 from copy import deepcopy
 
 
-version = '1.02'
+version = '1.2'
 
 def check_candidates(hydrogen_species,non_H_species):
     #check if format of candidate molecules is OK
