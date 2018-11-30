@@ -13,11 +13,12 @@
 version = '2.012'
 versions = {'Class': version}
 
-import molecules2
+import molecules3 as molecules2
 import scipy as sp
 import random
 from copy import deepcopy
 import time
+from RGA_calibration_reader import write_to_TSV
 
 try:
     from RGA_fitting import version, check_candidates, make_candidates, check_disregard, export_CP, export_candidates, make_calibration_candidates, fit_line
@@ -76,12 +77,18 @@ def pin_point(input_list, sought_value):
     nearest_index = temp_list.index(min(temp_list))
     return nearest_index
     
-def write_to_TSV(path, inputlist):
+# write_to_TSV now moved to RGA_calibration_reader
+# as it is a input-output function, anyway.
+'''def write_to_TSV(path, inputlist, line_light='False'):
     """Write a 2D matrix as a TSV file, saved to path"""
+    if line_light:
+        linebreak = '\n'
+    else:
+        linebreak = '\r\n'
     outfile = open(path,'w')
     for line in inputlist:
-        outfile.writelines("%s\r\n" %("\t".join(map(str,line))))
-    outfile.close()
+        outfile.writelines("%s%s" %("\t".join(map(str,line)), linebreak))
+    outfile.close()'''
 
 def PadRight(inputlist, TargetLength, FillValue):
     """Append FillValue to inputlist until length(inputlist) == TargetLength"""
