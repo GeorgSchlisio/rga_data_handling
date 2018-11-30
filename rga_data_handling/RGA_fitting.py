@@ -4,12 +4,14 @@
 # IJS, Ljubljana
 # IPP, Garching
 
+# to je delovna verzija - branch new_candidates
+
 import sympy
 import scipy as sp
 import scipy.optimize as so
 import math
 import time
-from copy import copy
+from copy import deepcopy
 
 
 version = '1.02'
@@ -70,26 +72,37 @@ def check_candidates(hydrogen_species,non_H_species):
 
     return errors
 
+
 def make_candidates(molecules, hydrogen_species, non_H_species):
 
     candidates = []
     ratios = []
-    parameters = []
+    temp_parameters = []
     pressures = []
     ratios = []
-    boundaries = []
-    init_vals = []
+    boundaries = {'pressure': [], 'ratio': []}
+    #init_vals = []
     for key in hydrogen_species.keys():
         specimen = hydrogen_species[key]
-        pressure = specimen[0]
+        pressure_raw = specimen[0]
+        
+        if type(pressure_raw) == list:
+            if len(pressure_raw) != 3:
+                # error, invalid pressure definition
+                continue
+            pressure = pressure_raw[0]
+            pres_bnd = pressure_raw[1:]
+        elif type(pressure_raw) == str:
+            pressure = pressure_raw
+            pres_bnd = [0,None]        
         mol_name = specimen[1]
         ratio_raw = specimen[2]
-        if pressure not in parameters:
+        if pressure not in temp_parameters:
             local_parameters = [pressure]
-            parameters.append(pressure)
+            temp_parameters.append(pressure)
             pressures.append(pressure)
-            boundaries.append([0,None])
-            init_vals.append(1)
+            boundaries['pressure'].append(pres_bnd)
+            #init_vals.append(1)
         #preveri, da je izotopsko razmerje v redu
         if type(ratio_raw) == list:
             if len(ratio_raw) != 3:
@@ -98,21 +111,21 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
             else:
                 ratio = ratio_raw[0]
                 ratio_bnd = ratio_raw[1:]
-                if ratio not in parameters:
+                if ratio not in temp_parameters:
                     local_parameters.append(ratio)
-                    parameters.append(ratio)
+                    temp_parameters.append(ratio)
                     ratios.append(ratio)
-                    boundaries.append(ratio_bnd)
-                    init_vals.append(0.5)
+                    boundaries['ratio'].append(ratio_bnd)
+                    #init_vals.append(0.5)
         elif type(ratio_raw) == str:
             ratio = ratio_raw
             ratio_bnd = [0,1]
-            if ratio not in parameters:
+            if ratio not in temp_parameters:
                 local_parameters.append(ratio)
-                parameters.append(ratio)
+                temp_parameters.append(ratio)
                 ratios.append(ratio)
-                boundaries.append(ratio_bnd)
-                init_vals.append(0.5)
+                boundaries['ratio'].append(ratio_bnd)
+                #init_vals_te.append(0.5)
         elif type(ratio_raw) in [int,float]:
             ratio = ratio_raw
 
@@ -128,20 +141,42 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
         
     for key in non_H_species.keys():
         specimen = non_H_species[key]
-        pressure = specimen[0]
+        pressure_raw = specimen[0]
         mol_name = specimen[1]
-        parameters.append(pressure)
-        pressures.append(pressure)
-        boundaries.append([0,None])
-        init_vals.append(1)
+        if type(pressure_raw) == list:
+            if len(pressure_raw) != 3:
+                # error, invalid pressure definition
+                continue
+            pressure = pressure_raw[0]
+            pres_bnd = pressure_raw[1:]
+        elif type(pressure_raw) == str:
+            pressure = pressure_raw
+            pres_bnd = [0,None]
+        if pressure not in temp_parameters:
+            temp_parameters.append(pressure)
+            pressures.append(pressure)
+            boundaries['pressure'].append(pres_bnd)
+        #init_vals_temp.append(1)
         exec("%s = sympy.symbols('%s')" %(pressure, pressure))
         exec("local_candidate = %s * molecules.CP['%s']" %(pressure, mol_name))
         
         candidates.append(local_candidate)
         
-    candidate_dict = {"candidates": candidates, "parameters": parameters, "pressures": pressures, "ratios": ratios, "boundaries": boundaries, "init_vals": init_vals}
-        
+    # make a list of the fitting parameters and the initial values
+    parameters = pressures + ratios
+    init_vals = {'pressure': [], 'ratio': []}
     
+    for what in ['pressure', 'ratio']:
+        for pair in boundaries[what]:
+            if pair[1] == None:
+                init_val = 0
+            else:
+                init_val = 0.5 * (pair[1] - pair[0])
+            init_vals[what].append(init_val)
+    
+    candidate_dict = {"candidates": candidates, "parameters": parameters, "pressures": pressures, "ratios": ratios,
+    "boundaries": boundaries, "init_vals": init_vals}
+        
     return candidate_dict
     
 def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
@@ -151,6 +186,7 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     # parameters
     # init_vals
     # boundaries
+    # TO DO - popravi na novo verzijo kandidatov
 
 
     # najprej identifikacija molekule, ce je mogoce, in priprava definicije za construct_full
@@ -267,13 +303,17 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     par_rat = candidates_dict["ratios"]
     boundaries = candidates_dict["boundaries"]
     init_vals = candidates_dict["init_vals"]
-        
-    masses_of_interest = []
-    for mass in range(1,header_int[-1] + 1):
-        if sum(candidates)[mass] != 0:
-            masses_of_interest.append(mass) 
+    masses_of_interest = candidates_dict["masses_of_interest"]
+    
+    # testno - masses of interest se prebere iz candidates_dict    
+    #masses_of_interest = []
+    
+    # tukaj sem ven vrgel header int - ce dela, ga lahko dam ven iz argumentov.
+    #for mass in range(1,len(sum(candidates))):
+    #    if sum(candidates)[mass] != 0:
+    #        masses_of_interest.append(mass) 
             
-    recorded = copy(recorded_in)
+    recorded = deepcopy(recorded_in)
     for element in disregard:
         if type(element) == int:
             if len(line) >= element:
@@ -297,10 +337,29 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
         except ValueError:
             maxvalexp = 0
     maxval = 10**maxvalexp
+    # apply the maxval to the pressure boundaries
+    boundaries_final = []
+    init_vals_final = []
+    for i in range(len(boundaries['pressure'])):
+        pair = deepcopy(boundaries['pressure'][i])
+        init_val = deepcopy(init_vals['pressure'][i])
+        if pair[1] != None:
+            for j in (0, 1):
+                pair[j] *= maxval
+            init_val *= maxval
+        boundaries_final.append(pair)
+        init_vals_final.append(init_val)
+    boundaries_final = boundaries_final + boundaries['ratio']
+    #boundaries_final = boundaries['pressure'] + boundaries['ratio']
+    init_vals_final = init_vals_final + init_vals['ratio']
+    #init_vals_final = init_vals['pressure'] + init_vals['ratio']
     
     ansatz = sum(candidates)
     equations = []
-    for i in masses_of_interest:
+    # ali gre i po masses_of_interest ali header_int?
+    # potrebno je sesteti po vseh posnetih masah
+    # masses_of_interest je tako ali tako definiran po tem, da je vsota kandidatov (i.e. ansatz) == 0
+    for i in header_int:
         recording = line[i] * maxval
         equations.append(recorded[i]*(recording-ansatz[i])*(recording-ansatz[i]))
     residual_string = str(sum(equations))
@@ -320,9 +379,9 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     start_time = time.clock()
     # if more than 0 iterations are specified, use the basinhopping function
     if n_iter == 0:
-        rez = so.minimize(residual,init_vals,bounds=boundaries,method='L-BFGS-B')
+        rez = so.minimize(residual,init_vals_final,bounds=boundaries_final,method='L-BFGS-B')
     else:
-        rez = so.basinhopping(residual, init_vals, niter = n_iter, minimizer_kwargs = dict(method='L-BFGS-B', bounds=boundaries))
+        rez = so.basinhopping(residual, init_vals_final, niter = n_iter, minimizer_kwargs = dict(method='L-BFGS-B', bounds=boundaries_final))
     residual_value = math.sqrt(rez.fun*maxval**-2)
     loc_duration = time.clock() - start_time
 
