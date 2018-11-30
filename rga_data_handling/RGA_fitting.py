@@ -4,7 +4,8 @@
 # IJS, Ljubljana
 # IPP, Garching
 
-# to je delovna verzija - branch new_candidates
+# Merged with new candidates (30.11.2018)
+# TO DO: Export candidates, consider import candidates
 
 import sympy
 import scipy as sp
