@@ -10,14 +10,15 @@
 # IPP, Garching
 
 
-version = '2.012'
+version = '2.1'
 versions = {'Class': version}
 
-import molecules2
+import molecules3 as molecules2
 import scipy as sp
 import random
 from copy import deepcopy
 import time
+from RGA_calibration_reader import write_to_TSV
 
 try:
     from RGA_fitting import version, check_candidates, make_candidates, check_disregard, export_CP, export_candidates, make_calibration_candidates, fit_line
@@ -76,12 +77,18 @@ def pin_point(input_list, sought_value):
     nearest_index = temp_list.index(min(temp_list))
     return nearest_index
     
-def write_to_TSV(path, inputlist):
+# write_to_TSV now moved to RGA_calibration_reader
+# as it is a input-output function, anyway.
+'''def write_to_TSV(path, inputlist, line_light='False'):
     """Write a 2D matrix as a TSV file, saved to path"""
+    if line_light:
+        linebreak = '\n'
+    else:
+        linebreak = '\r\n'
     outfile = open(path,'w')
     for line in inputlist:
-        outfile.writelines("%s\r\n" %("\t".join(map(str,line))))
-    outfile.close()
+        outfile.writelines("%s%s" %("\t".join(map(str,line)), linebreak))
+    outfile.close()'''
 
 def PadRight(inputlist, TargetLength, FillValue):
     """Append FillValue to inputlist until length(inputlist) == TargetLength"""
@@ -173,12 +180,11 @@ class Trace:
                 # if no label is recognized, set the index column as the time column
                 self.set_timecol('index')
 
-            # Construction of the 'recorded' array
+            
             self.header_int = sp.array(sorted(header_int))
-            self.recorded = sp.zeros(self.header_int[-1] + 1)
-            for i in range(self.header_int[-1] + 1):
-                if i in self.header_int:
-                    self.recorded[i] = 1
+            # Construction of the 'recorded' array
+            # moved to deconvolute
+
 
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
@@ -210,7 +216,10 @@ class Trace:
     # e.g. line[28] returns the recording at 28 AMU
     
         line = [self.columns[self.time_col][ti]]
-        for mass in range(1,self.header_int[-1]+1):
+        # testno - mase morajo iti do zadnje mase v masses_of_interest
+        last_mass = max(self.masses_of_interest)        
+        #for mass in range(1,self.header_int[-1]+1):
+        for mass in range(1, last_mass + 1):
             if mass in self.header_int:
                 line.append(self.columns[mass][[ti]])
             else:
@@ -289,9 +298,18 @@ class Trace:
         self.pressures = self.candidates_dict['pressures']
         self.ratios = self.candidates_dict['ratios']
         self.masses_of_interest = []
-        for mass in range(1,self.header_int[-1] + 1):
+        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
+        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
+        
+        # construction of the recorded array
+        # now based on the masses_of_interest        
+        
+        self.recorded = sp.zeros(max(self.header_int) + 1)
+        for i in range(max(self.header_int) + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:
@@ -323,7 +341,7 @@ class Trace:
             outcols['duration'].append(results['duration'])
 
             simtrace.append(sim_masses)
-            
+        #return outcols    
         self.glob_duration = time.clock() - glob_start
         
         self.rescols = {}
@@ -334,7 +352,11 @@ class Trace:
         tablength = len(outcols[self.time_col])
         for key in self.H_species.keys():
             self.rescols[key]={}
-            self.rescols[key]['pressure'] = sp.array(outcols[self.H_species[key][0]])
+            if type(self.H_species[key][0]) == list:
+                pres_name = self.H_species[key][0][0]
+            elif type(self.H_species[key][0]) == str:
+                pres_name = self.H_species[key][0]
+            self.rescols[key]['pressure'] = sp.array(outcols[pres_name])
             if type(self.H_species[key][2]) == list:
                 self.rescols[key]['ratio'] = sp.array(outcols[self.H_species[key][2][0]])
             elif type(self.H_species[key][2]) == str:
@@ -343,7 +365,12 @@ class Trace:
                 self.rescols[key]['ratio'] = self.H_species[key][2] * sp.ones(tablength)
         for key in self.non_H_species.keys():
             self.rescols[key]={}
-            self.rescols[key]['pressure'] = sp.array(outcols[self.non_H_species[key][0]])
+            pres_def = self.non_H_species[key][0]
+            if type(pres_def) == list:
+                pres_name = pres_def[0]
+            elif type(pres_def) == str:
+                pres_name = pres_def
+            self.rescols[key]['pressure'] = sp.array(outcols[pres_name])
             
         self.simtracecol={}
         for mass in range(1,len(sp.transpose(simtrace))):
@@ -443,7 +470,6 @@ class Trace:
             
         self.calib_glob_duration = time.clock() - glob_start
         
-        # do sem sem prisel
         self.calibcols = {}
         self.calibcols['index'] = sp.array(ti_list)
         self.calibcols[self.time_col] = sp.array(outcols[self.time_col])
@@ -678,12 +704,12 @@ class Profile:
             last_mass = 0
         
         self.header_int = []
-        self.recorded = sp.zeros(last_mass + 1)
+        #self.recorded = sp.zeros(last_mass + 1)
         self.MID_col = sp.zeros(last_mass + 1)
         for mass in range(first_mass, last_mass + 1):
             temp_area = (self.mass_col > mass - 0.5) * (self.mass_col < mass + 0.5)
             if list(temp_area).count(True) > 0:
-                self.recorded[mass] = 1
+                #self.recorded[mass] = 1
                 self.header_int.append(mass)
                 intensity = max(self.intensity_col[temp_area])
                 self.MID_col[mass] = intensity
@@ -720,10 +746,18 @@ class Profile:
         self.pressures = self.candidates_dict['pressures']
         self.ratios = self.candidates_dict['ratios']
         self.masses_of_interest = []
-        for mass in range(1,self.header_int[-1] + 1):
+        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
+        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
         
+        # construction of the recorded array
+        # now based on the masses_of_interest        
+        
+        self.recorded = sp.zeros(max(self.header_int) + 1)
+        for i in range(self.header_int[-1] + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
         
@@ -876,8 +910,11 @@ class Profile:
 # zdruzevanje rezultatov fita v enem trejsu
 
 def join_traces(in_trace_list):
-
+    # error messages:
+    # 101 - Time column not the same in all traces
+    err = 0
     tracelist = []
+    parameters = []
     for trace in in_trace_list:
         # najprej sortiranje tracov po zacetnem casu
         tracelist.append([trace.rescols[trace.time_col][0], trace, trace.time_col])
@@ -885,6 +922,7 @@ def join_traces(in_trace_list):
     tc = tracelist[0][2]
     for entry in tracelist[1:]:
         if entry[2] != tc:
+            err = 101
             print "Time col not same in all traces."
 
     rescols_j = {}
@@ -899,6 +937,9 @@ def join_traces(in_trace_list):
 
 
     for entry in tracelist:
+        sub_param = {}
+        start_t = entry[0]
+        sub_param['start time'] = start_t
         trace = entry[1]
         rc_t = trace.rescols
         stc_t = trace.simtracecol
@@ -906,11 +947,15 @@ def join_traces(in_trace_list):
         HM_t = trace.H_species
         NHM_t = trace.non_H_species
         moi_t = trace.masses_of_interest
+        sub_param['H_molecules'] = HM_t
+        sub_param['non_H_molecules'] = NHM_t
+        
+        parameters.append(sub_param)
 
         zerocol_j = sp.zeros(len(rescols_j[tc]))
         zerocol_t = sp.zeros(len(rc_t[tc]))
 
-        print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(entry[0], ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
+        print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
 
         for gas in HM_j.keys():
             if gas not in HM_t.keys():
@@ -952,8 +997,9 @@ def join_traces(in_trace_list):
     jtrace.non_H_species = NHM_j
     jtrace.masses_of_interest = moi_j
     jtrace.simtracecol = stc_j
+    jtrace.joined_parameters = parameters
     
-    return jtrace
+    return err, jtrace
     
     
 # zdruzevanje kalibracijskih rezultatov
