@@ -164,7 +164,10 @@ class mass_space:
             CPdef = calib['H'][gas]
             max_mass_H = CPdef['non-H-mass'] + CPdef['H-atoms'] * atom_mass_d['D']
             used_peaks.append(max_mass_H)
-        max_peak = max(used_peaks)
+        try:    
+            max_peak = max(used_peaks)
+        except ValueError:
+            max_peak = 0
         if max_peak > self.max_mass:
             self.make_base(max_peak)
         
