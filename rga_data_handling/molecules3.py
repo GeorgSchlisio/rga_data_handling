@@ -137,6 +137,7 @@ class mass_space:
     def init_CP(self, CP_spec=None):
         
         self.CP = {}
+        self.calib = {'device': 'None', 'version': 'None', 'H': {}, 'non-H': {}}
         # read out the cracking pattern definitions from file.
         # ATM no default version
         if type(CP_spec) == str:
@@ -149,8 +150,9 @@ class mass_space:
             self.calib = check_calib(calib)           
             self.calib['source'] = 'direct entry'
         # if the calibration contains no definitions treat the input as the old version
-        calib = read_old_version(CP_spec)
-        self.calib = check_calib(calib)
+        if len(self.calib['H']) == 0 and len(self.calib['non-H']) == 0:
+            calib = read_old_version(CP_spec)
+            self.calib = check_calib(calib)
         
         # check if the base contains sufficiently high masses
         # currently works only for non-H molecules
@@ -164,7 +166,10 @@ class mass_space:
             CPdef = calib['H'][gas]
             max_mass_H = CPdef['non-H-mass'] + CPdef['H-atoms'] * atom_mass_d['D']
             used_peaks.append(max_mass_H)
-        max_peak = max(used_peaks)
+        try:    
+            max_peak = max(used_peaks)
+        except ValueError:
+            max_peak = 0
         if max_peak > self.max_mass:
             self.make_base(max_peak)
         
