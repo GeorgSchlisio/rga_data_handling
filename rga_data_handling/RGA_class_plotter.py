@@ -6,7 +6,7 @@
 import scipy as sp
 import matplotlib.pyplot as plt
 from copy import copy
-version = '1.2'
+version = '1.3'
 
 sz = {'legend': 12, 'legend_mass': 10, 'napis': 12,'label_x': 16, 'label_y': 16, 'tick_x': 14, 'tick_y': 14}
 
