@@ -251,11 +251,12 @@ def read_calibration_file(filename):
 
 def write_to_TSV(path, inputlist, line_light='False'):
     """Write a 2D matrix as a TSV file, saved to path"""
-    if line_light:
-        linebreak = '\n'
-    else:
-        linebreak = '\r\n'
-    outfile = open(path,'w')
+    #if line_light:
+    #    linebreak = '\n'
+    #else:
+    #    linebreak = 'test\r\n'
+    linebreak = '\r\n'
+    outfile = open(path,'wb')
     for line in inputlist:
         outfile.writelines("%s%s" %("\t".join(map(str,line)), linebreak))
     outfile.close()
