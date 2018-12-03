@@ -149,7 +149,7 @@ class mass_space:
             self.calib = check_calib(calib)           
             self.calib['source'] = 'direct entry'
         # if the calibration contains no definitions treat the input as the old version
-        if len(calib['H']) == 0 and len(calib['non-H']) == 0:
+        if len(self.calib['H']) == 0 and len(self.calib['non-H']) == 0:
             calib = read_old_version(CP_spec)
             self.calib = check_calib(calib)
         
