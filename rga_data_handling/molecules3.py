@@ -149,8 +149,9 @@ class mass_space:
             self.calib = check_calib(calib)           
             self.calib['source'] = 'direct entry'
         # if the calibration contains no definitions treat the input as the old version
-        calib = read_old_version(CP_spec)
-        self.calib = check_calib(calib)
+        if len(calib['H']) == 0 and len(calib['non-H']) == 0:
+            calib = read_old_version(CP_spec)
+            self.calib = check_calib(calib)
         
         # check if the base contains sufficiently high masses
         # currently works only for non-H molecules
