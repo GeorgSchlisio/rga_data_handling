@@ -137,6 +137,7 @@ class mass_space:
     def init_CP(self, CP_spec=None):
         
         self.CP = {}
+        self.calib = {'device': 'None', 'version': 'None', 'H': {}, 'non-H': {}}
         # read out the cracking pattern definitions from file.
         # ATM no default version
         if type(CP_spec) == str:
