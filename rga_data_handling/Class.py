@@ -97,7 +97,51 @@ def PadRight(inputlist, TargetLength, FillValue):
     else:
         return inputlist
 
+# TO DO: perturbacija za novo verzijo CP
+# input kot float ali dict
+
 def perturb_CP(container, perturbation):
+    CP_new = deepcopy(container.molecules.calib)
+    perturb_d = {}
+    if type(perturbation) in [int, float]:
+        # construct the dictionary of perturbation for each molecule in the CP
+        for what in ['H', 'non-H']:
+            for mol in CP_new[what].keys():
+                perturb_d[mol] = perturbation
+        CP_new['version'] = "%s perturbed by %s" %(CP_new['version'], perturbation)
+    elif type(perturbation) == dict:
+        # take only the keys that appear in the CP
+        for what in ['H', 'non-H']:
+            for mol in CP_new[what].keys():
+                try:
+                    perturb_d[mol] = perturbation[mol]
+                except KeyError:
+                    perturb_d[mol] = 0
+        CP_new['version'] = "%s perturbed by various degrees" %(CP_new['version'])
+    else:
+        # invalid perturbation definition, perturb all by 0
+        for what in ['H', 'non-H']:
+            for mol in CP_new[what].keys():
+                perturb_d[mol] = 0
+         CP_new['version'] = "%s not perturbed - invalid definition of perturbation" %(CP_new['version'])
+                
+    for mol in CP_new['H'].keys():
+        mol_d = CP_new['H'][mol]
+        pks = mol_d['peaks']
+        for i in range(1, len(pks)):
+            pks[i] = pks[i] * (1 + 2 * perturb_d[mol] * (random.random() - 0.5))
+    for mol in CP_new['non-H'].keys():
+        mol_d = CP_new['non-H'][mol]
+        pks = mol_d['peaks']
+        for i in range(1, len(pks)):
+            pks[i][1] = pks[i][1] * (1 + 2 * perturb_d[mol] * (random.random() - 0.5))
+            
+    container.replace_CP(CP_new)
+    
+
+# old version of perturb_CP
+# kept for legacy reasons and to be removed
+def perturb_CP_old(container, perturbation):
     """Perturb the cracking pattern loaded in the container with the magnitude of perturbation"""
     CP_new = container.molecules.calib
     for key in CP_new.keys():
@@ -217,7 +261,9 @@ class Trace:
     
         line = [self.columns[self.time_col][ti]]
         # testno - mase morajo iti do zadnje mase v masses_of_interest
-        last_mass = max(self.masses_of_interest)        
+        # last_mass = max(self.masses_of_interest)  
+        # testno 2 - max maso vzami iz mass_space
+        last_mass = self.molecules.max_mass      
         #for mass in range(1,self.header_int[-1]+1):
         for mass in range(1, last_mass + 1):
             if mass in self.header_int:

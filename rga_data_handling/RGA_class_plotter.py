@@ -3,6 +3,8 @@
 # Aleksander Drenik, IJS
 # Oktober 2015
 
+# TO DO: nastavljanje y skale na massplotu
+
 import scipy as sp
 import matplotlib.pyplot as plt
 from copy import copy

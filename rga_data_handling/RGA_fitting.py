@@ -358,9 +358,9 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     ansatz = sum(candidates)
     equations = []
     # ali gre i po masses_of_interest ali header_int?
-    # potrebno je sesteti po vseh posnetih masah
+    # potrebno je sesteti po vseh posnetih masah - NE! Potem k ostanku prispevajo tudi mase, ki ne nastopajo v nastavku
     # masses_of_interest je tako ali tako definiran po tem, da je vsota kandidatov (i.e. ansatz) == 0
-    for i in header_int:
+    for i in masses_of_interest:
         recording = line[i] * maxval
         equations.append(recorded[i]*(recording-ansatz[i])*(recording-ansatz[i]))
     residual_string = str(sum(equations))
