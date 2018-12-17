@@ -3,14 +3,23 @@
 # Aleksander Drenik, IJS
 # Oktober 2015
 
-# TO DO: nastavljanje y skale na massplotu
-
 import scipy as sp
 import matplotlib.pyplot as plt
 from copy import copy
 version = '1.3'
 
 sz = {'legend': 12, 'legend_mass': 10, 'napis': 12,'label_x': 16, 'label_y': 16, 'tick_x': 14, 'tick_y': 14}
+
+def focus_columns(columns, area, time_col_name='time'):
+    """Select sections of columns corresponding to the interval"""
+    new_columns = {}
+    x_col = columns[time_col_name]
+   
+    selection = (x_col >= area[0]) * (x_col <= area[1])
+    for key in columns.keys():
+        new_columns[key] = columns[key][selection]
+    
+    return new_columns
 
 # Risanje posnetih meritev
 
@@ -213,11 +222,12 @@ def show_results_trace(in_trace, gas_list=None):
     
     # Plot of recorded and simulated masses
     mass_plot = fig.add_subplot(3,1,1)
+    new_columns = focus_columns(columns, time_frame, time_col)
     for mass in masses_of_interest:
         try:
-            mass_plot.plot(columns[time_col],columns[mass],label = "%s AMU" %mass)
+            mass_plot.plot(new_columns[time_col],new_columns[mass],label = "%s AMU" %mass)
         except KeyError:
-            mass_plot.plot(columns[time_col],sp.zeros(len(columns[time_col])),label = "%s AMU" %mass)
+            mass_plot.plot(new_columns[time_col],sp.zeros(len(new_columns[time_col])),label = "%s AMU" %mass)
     plt.gca().set_color_cycle(None)
     for mass in masses_of_interest:
         mass_plot.plot(rescols[time_col],simtracecol[mass],marker = "x", ls = '--')
