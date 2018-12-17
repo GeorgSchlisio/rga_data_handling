@@ -123,7 +123,7 @@ def perturb_CP(container, perturbation):
         for what in ['H', 'non-H']:
             for mol in CP_new[what].keys():
                 perturb_d[mol] = 0
-         CP_new['version'] = "%s not perturbed - invalid definition of perturbation" %(CP_new['version'])
+        CP_new['version'] = "%s not perturbed - invalid definition of perturbation" %(CP_new['version'])
                 
     for mol in CP_new['H'].keys():
         mol_d = CP_new['H'][mol]
