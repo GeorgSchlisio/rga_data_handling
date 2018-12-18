@@ -216,7 +216,7 @@ class Trace:
         self.columns['index'] = sp.arange(bloc_len)
         if len(header_int) > 0 and bloc_len > 0:
             self.filled = True # Trace contains technically OK data
-            # set the time column
+            # set the time column                
             time_col_candidates = list(set(self.columns.keys()) & set(known_time_labels))
             try:
                 self.set_timecol(time_col_candidates[0])
@@ -228,7 +228,12 @@ class Trace:
             self.header_int = sp.array(sorted(header_int))
             # Construction of the 'recorded' array
             # moved to deconvolute
-
+            # moved back - needed by calibrate too
+            # TO DO: make recorded at re-initialization of mass space
+            self.recorded = sp.zeros(max(self.header_int) + 1)
+            for i in range(max(self.header_int) + 1):
+                if i in self.header_int:
+                    self.recorded[i] = 1
 
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
@@ -472,9 +477,11 @@ class Trace:
                 #print "Unknown molecule"
                 pass
         if type(molecule) == dict:
+            mol_def = molecule
             self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
             if not set(['NH_mass', 'nAt', 'rel_int']).issubset(set(mol_def.keys())):
                 # print invalid molecule definition
+                # TO DO: boljsi error handling
                 pass
             
         self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
@@ -482,6 +489,7 @@ class Trace:
         for mass in range(1,self.header_int[-1] + 1):
             if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
                 self.calib_masses_of_interest.append(mass)
+        self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:

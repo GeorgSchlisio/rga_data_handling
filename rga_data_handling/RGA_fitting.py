@@ -195,8 +195,8 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
 
     candidates = []
     parameters = []
-    boundaries = []
-    init_vals = []
+    boundaries = {'pressure': [], 'ratio': [], 'peaks': []}
+    init_vals = {'pressure': [], 'ratio': [], 'peaks': []}
     pressures = []
     ratios = []
     peaks = ['1']
@@ -205,8 +205,8 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
 
     parameters.append('pres')
     pressures.append('pres')
-    boundaries.append([0,None])
-    init_vals.append(1)
+    boundaries['pressure'].append([0,None])
+    init_vals['pressure'] = [1]
 
     # priprava izotopskega razmerja
 
@@ -220,16 +220,16 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
             if ratio not in parameters:
                 parameters.append(ratio)
                 ratios.append(ratio)
-                boundaries.append(ratio_bnd)
-                init_vals.append(0.5 * (ratio_bnd[1] - ratio_bnd[0]))
+                boundaries['ratio'].append(ratio_bnd)
+                init_vals['ratio'].append(0.5 * (ratio_bnd[1] - ratio_bnd[0]))
     elif type(ratio_def) == str:
         ratio = ratio_def
         ratio_bnd = [0,1]
         if ratio not in parameters:
             parameters.append(ratio)
             ratios.append(ratio)
-            boundaries.append(ratio_bnd)
-            init_vals.append(0.5)
+            boundaries['ratio'].append(ratio_bnd)
+            init_vals['ratio'].append(0.5)
     elif type(ratio_def) in [int,float]:
         ratio = ratio_def
 
@@ -242,13 +242,13 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
             if type(peak_def[0]) == str and type(peak_def[1]) in [float, int] and type(peak_def[2]) in [float, int]:
                 parameters.append(peak_def[0])
                 peaks.append(peak_def[0])
-                boundaries.append([peak_def[1], peak_def[2]])
-                init_vals.append(0.5 * (peak_def[2] - peak_def[1]))
+                boundaries['peaks'].append([peak_def[1], peak_def[2]])
+                init_vals['peaks'].append(0.5 * (peak_def[2] - peak_def[1]))
 
         if type(peak_def) == str:
             parameters.append(peak_def)
-            boundaries.append([0, None])
-            init_vals.append(0.5)
+            boundaries['peaks'].append([0, None])
+            init_vals['peaks'].append(0.5)
             peaks.append(peak_def)
         if type(peak_def) in [float, int]:
             peaks.append(str(peak_def))
@@ -354,6 +354,9 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     #boundaries_final = boundaries['pressure'] + boundaries['ratio']
     init_vals_final = init_vals_final + init_vals['ratio']
     #init_vals_final = init_vals['pressure'] + init_vals['ratio']
+    if 'peaks' in boundaries.keys():
+        boundaries_final = boundaries_final + boundaries['peaks']
+        init_vals_final = init_vals_final + init_vals['peaks']
     
     ansatz = sum(candidates)
     equations = []

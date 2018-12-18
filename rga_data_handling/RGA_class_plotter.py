@@ -293,11 +293,12 @@ def show_calibration_trace(in_trace):
     
     # Plot of recorded and simulated masses
     mass_plot = fig.add_subplot(3,1,1)
+    new_columns = focus_columns(columns, time_frame, time_col)
     for mass in masses_of_interest:
         try:
-            mass_plot.plot(columns[time_col],columns[mass],label = "%s AMU" %mass)
+            mass_plot.plot(new_columns[time_col],new_columns[mass],label = "%s AMU" %mass)
         except KeyError:
-            mass_plot.plot(columns[time_col],sp.zeros(len(columns['time'])),label = "%s AMU" %mass)
+            mass_plot.plot(new_columns[time_col],sp.zeros(len(new_columns['time'])),label = "%s AMU" %mass)
     plt.gca().set_color_cycle(None)
     for mass in masses_of_interest:
         mass_plot.plot(calibcols[time_col],simtracecol[mass],marker = "x", ls = '--')
@@ -325,7 +326,9 @@ def show_calibration_trace(in_trace):
     # Plot of cracking pattern peaks
     peak_plot = fig.add_subplot(3,1,3)
     for peak in sorted(calibcols['peaks'].keys()):
-        peak_plot.plot(calibcols[time_col],calibcols['peaks'][peak],marker = 'o', label = "Peak #%s" %peak)
+        val = sp.mean(calibcols['peaks'][peak])
+        std = sp.std(calibcols['peaks'][peak])
+        peak_plot.plot(calibcols[time_col],calibcols['peaks'][peak],marker = 'o', label = "Peak #%s\n%.2f +- %.2f" %(peak, val, std))
     peak_plot.set_ylabel('Relative peak', fontsize = sz['label_y'])
     #rat_plot.set_title("H/(H+D) ratios")
     
