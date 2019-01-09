@@ -365,10 +365,11 @@ class Trace:
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recorded = sp.zeros(max(self.header_int) + 1)
-        for i in range(max(self.header_int) + 1):
-            if i in self.header_int:
-                self.recorded[i] = 1
+        self.recoded = self.make_recorded()
+        #self.recorded = sp.zeros(max(self.header_int) + 1)
+        #for i in range(max(self.header_int) + 1):
+        #    if i in self.header_int:
+        #        self.recorded[i] = 1
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:
@@ -789,6 +790,17 @@ class Profile:
             self.molecules = molecules2.mass_space(self.header_int[-1])
             #TO DO - by default, initialize cracking patterns with appropriate calibration files
             self.molecules.init_CP()
+            self.make_recorded()
+    
+    def make_recorded(self):
+        try:
+            max_mass = self.molecules.max_mass
+        except AttributeError:
+            max_mass = max(self.header_int)
+        self.recorded = sp.zeros(max_mass + 1)
+        for i in range(max(self.header_int) + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
             
     def replace_CP(self, path):
         self.molecules.init_CP(path)
@@ -816,10 +828,11 @@ class Profile:
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recorded = sp.zeros(max(self.header_int) + 1)
-        for i in range(self.header_int[-1] + 1):
-            if i in self.header_int:
-                self.recorded[i] = 1
+        self.recorded = self.make_recorded()
+        #self.recorded = sp.zeros(max(self.header_int) + 1)
+        #for i in range(self.header_int[-1] + 1):
+        #    if i in self.header_int:
+        #        self.recorded[i] = 1
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
         
