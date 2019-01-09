@@ -230,10 +230,7 @@ class Trace:
             # moved to deconvolute
             # moved back - needed by calibrate too
             # TO DO: make recorded at re-initialization of mass space
-            self.recorded = sp.zeros(max(self.header_int) + 1)
-            for i in range(max(self.header_int) + 1):
-                if i in self.header_int:
-                    self.recorded[i] = 1
+            self.make_recorded()
 
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
@@ -244,12 +241,18 @@ class Trace:
             self.molecules = molecules2.mass_space(self.header_int[-1])
             #TO DO - by default, initialize cracking patterns with appropriate calibration files
             self.molecules.init_CP()
-            
+    
+    def make_recorded(self):
+        self.recorded = sp.zeros(max(self.molecules.max_mass) + 1)
+        for i in range(max(self.header_int) + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
             
     def replace_CP(self, path):
         """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
         if self.filled:
-            self.molecules.init_CP(path)    
+            self.molecules.init_CP(path)
+            self.make_recorded()    
             
     def set_timecol(self, time_key):
         """Designate one of the columns as the time column"""
