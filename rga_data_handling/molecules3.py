@@ -171,6 +171,7 @@ class mass_space:
         except ValueError:
             max_peak = 0
         if max_peak > self.max_mass:
+            self.max_mass = max_peak
             self.make_base(max_peak)
         
         # definition of the non hydrogen molecules
