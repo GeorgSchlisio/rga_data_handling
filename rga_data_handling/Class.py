@@ -226,11 +226,7 @@ class Trace:
 
             
             self.header_int = sp.array(sorted(header_int))
-            # Construction of the 'recorded' array
-            # moved to deconvolute
-            # moved back - needed by calibrate too
-            # TO DO: make recorded at re-initialization of mass space
-            self.make_recorded()
+
 
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
@@ -241,6 +237,11 @@ class Trace:
             self.molecules = molecules2.mass_space(self.header_int[-1])
             #TO DO - by default, initialize cracking patterns with appropriate calibration files
             self.molecules.init_CP()
+            # Construction of the 'recorded' array
+            # moved to deconvolute
+            # moved back - needed by calibrate too
+            # TO DO: make recorded at re-initialization of mass space
+            self.make_recorded()
     
     def make_recorded(self):
         try:
