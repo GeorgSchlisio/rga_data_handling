@@ -243,7 +243,11 @@ class Trace:
             self.molecules.init_CP()
     
     def make_recorded(self):
-        self.recorded = sp.zeros(max(self.molecules.max_mass) + 1)
+        try:
+            max_mass = self.molecules.max_mass
+        except AttributeError:
+            max_mass = max(self.header_int)
+        self.recorded = sp.zeros(max_mass + 1)
         for i in range(max(self.header_int) + 1):
             if i in self.header_int:
                 self.recorded[i] = 1
