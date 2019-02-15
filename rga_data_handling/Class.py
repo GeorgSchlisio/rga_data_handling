@@ -984,7 +984,7 @@ class Profile:
 
 # zdruzevanje rezultatov fita v enem trejsu
 
-def join_traces(in_trace_list):
+def join_traces(in_trace_list, echo=False):
     # error messages:
     # 101 - Time column not the same in all traces
     err = 0
@@ -1029,8 +1029,9 @@ def join_traces(in_trace_list):
 
         zerocol_j = sp.zeros(len(rescols_j[tc]))
         zerocol_t = sp.zeros(len(rc_t[tc]))
-
-        print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
+        
+        if echo:
+            print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
 
         for gas in HM_j.keys():
             if gas not in HM_t.keys():
