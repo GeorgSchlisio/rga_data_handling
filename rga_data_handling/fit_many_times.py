@@ -50,7 +50,7 @@ def fit_many_times(container,times,perturb,to_join,*args,**kwargs):
         container_new.deconvolute(*args, **kwargs)
         if make_total:
             for j in range(len(common_list)):
-                total_isotopes(container_new, isotopes_list[j], common_list[j])
+                total_isotopes_trace(container_new, isotopes_list[j], common_list[j])
         traces.append(container_new)
         tot_dur += container_new.glob_duration
     print "deconvolution done, total duration %s seconds" %tot_dur
@@ -100,10 +100,22 @@ def povpreci(sims):
         for what in qt_list:
             for how in ['val', 'std']:
                 povp_res[gas][what][how] = sp.array(povp_res[gas][what][how])
+                
+    # same for residual and duration
+    for what in ['residual', 'duration']:
+        povp_res[what] = {'val': [], 'std': []}
+        for ti in range(len(tc)):
+            temp = []
+            for simtrace in sims:
+                temp.append(simtrace.rescols[what][ti])
+            povp_res[what]['val'].append(sp.mean(temp))
+            povp_res[what]['std'].append(sp.std(temp))
+        for how in ['val', 'std']:
+            povp_res[what][how] = sp.array(povp_res[what][how])
     povp_res['defs'] = {'HM': HM, 'NHM': NHM, 'title': title, 'time_col': tc_name}
     return povp_res
     
-def errorbar_results(povprecni, sz=default_sz, lp=2, gl=None, ratio_limit=None):
+def errorbar_results(povprecni, sz=default_sz, lp=2, residual=True, gl=None, ratio_limit=None):
     
     # TO DO - kaj s casovno skalo...
     
@@ -132,7 +144,9 @@ def errorbar_results(povprecni, sz=default_sz, lp=2, gl=None, ratio_limit=None):
         pres.errorbar(tc, povprecni[gas]['pressure']['val'], yerr = povprecni[gas]['pressure']['std'],
                        marker = 'o', label = gas)
         
-    
+    if residual:
+        pres.errorbar(tc, povprecni['residual']['val'], yerr=povprecni['residual']['std'],
+                        marker = 'o', label = 'residual')
     pres.set_ylabel("Pressure", fontsize = sz['label_y'])
     rat.set_ylabel("H/(H+D)", fontsize = sz['label_y'])
     
