@@ -735,6 +735,23 @@ class Trace:
                     bgr_p = 0
                 int_val_p = sp.trapz(temp_pres[int_range] - bgr_p, self.rescols[self.time_col][int_range])
                 self.pulse_integrated_results[gas] = {'pressure': int_val_p}
+                
+    def join_isotopes(self, isotope_list, common):
+        #if common not in self.rescols.keys():
+        p_col = sp.zeros(len(self.rescols['index']))
+        r_col = sp.zeros(len(self.rescols['index']))
+        in_rescols = list(set(self.rescols.keys()) & set(isotope_list))
+        if len(in_rescols) > 0:
+            self.rescols[common] = {}
+        for isotope in in_rescols:
+            p_col = p_col + self.rescols[isotope]['pressure']
+        self.rescols[common]['pressure'] = p_col
+        try:
+            for isotope in in_rescols:
+                r_col = r_col + self.rescols[isotope]['ratio'] * self.rescols[isotope]['pressure'] / p_col
+            self.rescols[common]['ratio'] = r_col
+        except KeyError:
+            pass
 
 
 class Profile:
@@ -1162,6 +1179,8 @@ def join_traces_calib(in_trace_list):
 # isotope list: [['ammonia14', 'ammonia15']]
 # common: 'ammonia'
 
+# Moved to Trace as method
+"""
 def total_isotopes_trace(trace, isotope_list, common):
     #if common not in trace.rescols.keys():
     p_col = sp.zeros(len(trace.rescols['index']))
@@ -1178,4 +1197,4 @@ def total_isotopes_trace(trace, isotope_list, common):
         trace.rescols[common]['ratio'] = r_col
     except KeyError:
         pass
-        
+        """

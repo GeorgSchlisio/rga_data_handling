@@ -50,7 +50,7 @@ def fit_many_times(container,times,perturb,to_join,*args,**kwargs):
         container_new.deconvolute(*args, **kwargs)
         if make_total:
             for j in range(len(common_list)):
-                total_isotopes_trace(container_new, isotopes_list[j], common_list[j])
+                container_new.join_isotopes(isotopes_list[j], common_list[j])
         traces.append(container_new)
         tot_dur += container_new.glob_duration
     print "deconvolution done, total duration %s seconds" %tot_dur
