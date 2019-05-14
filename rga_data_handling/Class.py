@@ -152,6 +152,35 @@ def perturb_CP_old(container, perturbation):
     CP_new['version'] = "%s perturbed by %s" %(CP_new['version'], perturbation)
     container.replace_CP(CP_new)
 
+def read_molecule_definition(molecules, molecule):
+    # reads the molecule definition and returns number of H atoms, total mass of non H atoms and the relative intensity
+    # the molecule name, if known
+    # and the error
+    # error codes
+    # 5001 - uknown specified molecule
+    # 5002 - invalid specified molecule definition
+    #self.calib_tag = {}
+    err = 0
+    mol_name = 'unknown'
+    if type(molecule) == str:
+        # TO DO move calib_tag to container
+        #self.calib_tag['title'] = "Calibration of %s for %s" %(self.tag['title'], molecule)
+        # try to read the properties of the molecules from the loaded calibration
+        try:
+            mol_def = molecules.calib['H'][molecule]
+            mol_name = molecule
+        except KeyError:
+            err = 5001
+            mol_def = {'non-H-mass':0, 'H-atoms':0, 'intensity':0}
+    if type(molecule) == dict:
+        mol_def = molecule
+        #self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
+        if not set(['non-H-mass', 'H-atoms', 'intensity']).issubset(set(mol_def.keys())):
+            # print invalid molecule definition
+            err = 5002
+            mol_def = {'non-H-mass':0, 'H-atoms':0, 'intensity':0}
+            
+    return err, {'mol_def': mol_def, 'molecule': mol_name}
 
 #load_default_values({})
 
@@ -476,23 +505,16 @@ class Trace:
     def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step, n_iter=0):
         
         self.calib_tag = {}
-        if type(molecule) == str:
-            self.calib_tag['title'] = "Calibration of %s for %s" %(self.tag['title'], molecule)
-            try:
-                mol_def_1 = molecules2.H_molecules_d[molecule]
-                rel_int = self.molecules.calib[mol_def_1[0]][-1]
-                mol_def = {'NH_mass': mol_def_1[2], 'nAt': mol_def_1[1], 'rel_int': rel_int}
-            except KeyError:
-                #print "Unknown molecule"
-                pass
-        if type(molecule) == dict:
-            mol_def = molecule
+        err, mol_read = read_molecule_definition(self.molecules, molecule)
+        self.calib_tag['molecule_read_error'] = err
+        mol_def = mol_read['mol_def']
+        mol_name = mol_read['molecule']
+        if mol_name != 'unknown':
+            self.calib_tag['title'] = "Calibration of %s for %s" %(self.tag['title'], mol_name)
+        else:
             self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
-            if not set(['NH_mass', 'nAt', 'rel_int']).issubset(set(mol_def.keys())):
-                # print invalid molecule definition
-                # TO DO: boljsi error handling
-                pass
-            
+        self.calib_tag = {}
+        # pass the molecule definition to the make_calibration_candidates function
         self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
         self.calib_masses_of_interest = []
         for mass in range(1,self.header_int[-1] + 1):
@@ -885,26 +907,21 @@ class Profile:
     def calibrate(self, molecule, ratio_def, peak_defs, disregard, n_iter=0):
         
         self.calib_tag = {}
-        if type(molecule) == str:
-            self.calib_tag['title'] = "Calibration of %s for %s" %(self.tag['title'], molecule)
-            try:
-                mol_def_1 = molecules2.H_molecules_d[molecule]
-                rel_int = self.molecules.calib[mol_def_1[0]][-1]
-                mol_def = {'NH_mass': mol_def_1[2], 'nAt': mol_def_1[1], 'rel_int': rel_int}
-            except KeyError:
-                #print "Unknown molecule"
-                pass
-        if type(molecule) == dict:
-            self.calib_tag['title'] = "Calibration of %s " %self.tag['title']
-            if not set(['NH_mass', 'nAt', 'rel_int']).issubset(set(mol_def.keys())):
-                # print invalid molecule definition
-                pass
+        err, mol_read = read_molecule_definition(self.molecules, molecule)
+        self.calib_tag['molecule_read_error'] = err
+        mol_def = mol_read['mol_def']
+        mol_name = mol_read['molecule']
+        if mol_name != 'unknown':
+            self.calib_tag['title'] = "Calibration of %s for %s" %(self.tag['title'], mol_name)
+        else:
+            self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
             
         self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
         self.calib_masses_of_interest = []
         for mass in range(1,self.header_int[-1] + 1):
             if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
                 self.calib_masses_of_interest.append(mass)
+        self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
         

@@ -192,6 +192,7 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
 
     # najprej identifikacija molekule, ce je mogoce, in priprava definicije za construct_full
     # construct_full zahteva: NH_mass, nAt, p(AKA ratio), peak_list
+    # 14.5.2019 - mol_def key names updated to molecules3 standard names
 
     candidates = []
     parameters = []
@@ -258,8 +259,8 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
 
     strings_to_exec = []
     strings_to_exec.append("%s = sympy.symbols('%s')" %(par_string, par_string))
-    strings_to_exec.append("candidate = %s * %s * molecules.construct_full(%s, %s, %s, %s)" %('pres', mol_def['rel_int'], mol_def['NH_mass'], 
-                                                            mol_def['nAt'], ratio, peak_string))
+    strings_to_exec.append("candidate = %s * %s * molecules.construct_full(%s, %s, %s, %s)" %('pres', mol_def['intensity'], mol_def['non-H-mass'], 
+                                                            mol_def['H-atoms'], ratio, peak_string))
     for string in strings_to_exec:
             exec(string)
 
