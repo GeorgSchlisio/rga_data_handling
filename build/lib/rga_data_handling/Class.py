@@ -43,21 +43,31 @@ except:
     default_loaded = False
     default_values = {}"""
 
-def load_default_values(new_defaults=None):
-    """
-    Complete default dict
-    :param new_defaults:    (optional) dict with default values for 'trace_name', 'profile_name', 'export_dir', 'pulse_start' and 'pulse_stop'
-    :return:                input dict completed with standard values
-    """
-    default = {'trace_name': 'Timetrace recording',
-               'profile_name': "Profile recording",
-               'export_dir': 'EXPORT',
-               'pulse_start': 0,
-               'pulse_stop': None,
-               }
-    if isinstance(new_defaults, dict):
-        default.update(new_defaults)
+def load_default_values(default_values):
+    default = {}
+    try:
+        default['trace_name'] = default_values['trace_name']
+    except KeyError:
+        default['trace_name'] = 'Timetrace recording'
+    try:
+        default['profile_name']  = default_values['profile_name']
+    except KeyError:
+        default['profile_name'] = "Profile recording"
+    try:
+        default['export_dir'] = default_values['export_dir']
+    except KeyError:
+        default['export_dir'] = 'EXPORT'
 
+    try:
+        default['pulse_start'] = default_values['pulse_start']
+    except KeyError:
+        default['pulse_start'] = 0
+        
+    try:
+        default['pulse_stop'] = default_values['pulse_stop']
+    except KeyError:
+        default['pulse_stop'] = None
+        
     return default
 
 def pin_point(input_list, sought_value):
@@ -87,7 +97,8 @@ def PadRight(inputlist, TargetLength, FillValue):
     else:
         return inputlist
 
-# TO DO: error handling - raise warning
+# TO DO: perturbacija za novo verzijo CP
+# input kot float ali dict
 
 def perturb_CP(container, perturbation):
     CP_new = deepcopy(container.molecules.calib)
@@ -186,18 +197,7 @@ class Trace:
     # 103: empty header_int
     
     def __init__(self, columns, tag, default=None):
-        """Create a Trace object and fill it with data
-        Parameters:
-        :param columns: dict of 1D data arrays. column names either:
-                            "time" (or any other value in known_time_labels)    to be automatically recognized as time vector
-                            mass (int)                                          to be automatically recognized as data corresponding to given mass
-                            arbitrary string                                    to be manually assigned to timetrace via self.set_timecol
-        :param tag: dict of metadata
-                            time_unit   unit of time vector
-                            title       set data title
-        :param default: dict of default values (see set_default_values for understood options)
-        :return None
-        """
+        """Create a Trace object and fill it with data"""
         
         self.type = "Trace"
         self.columns = {}
@@ -253,11 +253,15 @@ class Trace:
                 # if no label is recognized, set the index column as the time column
                 self.set_timecol('index')
 
+            
             self.header_int = sp.array(sorted(header_int))
+
+
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
             if 'title' not in self.tag.keys():
                 self.tag['title'] = self.def_val['trace_name']
+                
             # Initialize mass-space and cracking patterns
             self.molecules = molecules2.mass_space(self.header_int[-1])
             #TO DO - by default, initialize cracking patterns with appropriate calibration files
@@ -268,7 +272,7 @@ class Trace:
             # TO DO: make recorded at re-initialization of mass space
             self.make_recorded()
     
-    def make_recorded(self): # not Trace specific
+    def make_recorded(self):
         try:
             max_mass = self.molecules.max_mass
         except AttributeError:
@@ -278,7 +282,7 @@ class Trace:
             if i in self.header_int:
                 self.recorded[i] = 1
             
-    def replace_CP(self, path): # Not Trace specific
+    def replace_CP(self, path):
         """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
         if self.filled:
             self.molecules.init_CP(path)
@@ -367,23 +371,21 @@ class Trace:
             profile.masses_of_interest = self.masses_of_interest
         return profile
     
-    def make_candidates(self): # Not Trace specific
+    def make_candidates(self):
         """Make data fitting candidates"""
         self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
-    
-    # TO DO: keep track of make_recorded    
-    def deconvolute(self, H_species, non_H_species, disregard, start_time, stop_time, step, n_iter=0):
-        # Trace specific, but with not Trace specific parts
-        """Deconvolute the data with H_species and non_H_species"""
-        self.H_species = H_species # Not Trace specific
-        self.non_H_species = non_H_species # Not Trace specific
-        self.disregard = disregard # Not Trace specific
         
-        self.make_candidates() # Not Trace specific
-        self.parameters = self.candidates_dict['parameters'] # Not Trace specific
-        self.pressures = self.candidates_dict['pressures'] # Not Trace specific
-        self.ratios = self.candidates_dict['ratios'] # Not Trace specific
-        self.masses_of_interest = []# Not Trace specific
+    def deconvolute(self, H_species, non_H_species, disregard, start_time, stop_time, step, n_iter=0):
+        """Deconvolute the data with H_species and non_H_species"""
+        self.H_species = H_species
+        self.non_H_species = non_H_species
+        self.disregard = disregard
+        
+        self.make_candidates()
+        self.parameters = self.candidates_dict['parameters']
+        self.pressures = self.candidates_dict['pressures']
+        self.ratios = self.candidates_dict['ratios']
+        self.masses_of_interest = []
         for mass in range(1,len(sum(self.candidates_dict['candidates']))):
             if sum(self.candidates_dict['candidates'])[mass] != 0:
                 self.masses_of_interest.append(mass)
@@ -392,14 +394,12 @@ class Trace:
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recoded = self.make_recorded() # Not Trace specific
+        self.recoded = self.make_recorded()
         #self.recorded = sp.zeros(max(self.header_int) + 1)
         #for i in range(max(self.header_int) + 1):
         #    if i in self.header_int:
         #        self.recorded[i] = 1
-        # Up to here - can be moved to make candidates
         
-        # Trace specific part starts here
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:
             self.glob_duration = 0
@@ -500,7 +500,6 @@ class Trace:
         self.outsimtrace = [massheader] + self.outsimtrace
         self.deconvoluted = True
         if self.echo:
-            # TO DO: print -> report: Fitting {title} for {candidates}, duration, errors
             print "Deconvolutiuon for %s done, duration %s s." %(self.tag['title'], self.glob_duration)
         
     def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step, n_iter=0):
@@ -522,7 +521,6 @@ class Trace:
             if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
                 self.calib_masses_of_interest.append(mass)
         self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
-        # make calibration candidates up to here
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:
@@ -584,6 +582,40 @@ class Trace:
         self.simtracecol={}
         for mass in range(1,len(sp.transpose(simtrace))):
             self.simtracecol[mass] = sp.transpose(simtrace)[mass]
+
+        """self.outtab = []
+        header_line_1 = ['Quantity']
+        header_line_2 = [self.time_col_name]
+        self.outtab.append(self.rescols[self.time_col])
+        for key in self.H_species.keys():
+            header_line_2.append(key)
+            header_line_1.append('Pressure')
+            self.outtab.append(self.rescols[key]['pressure'])
+        for key in self.non_H_species.keys():
+            header_line_2.append(key)
+            header_line_1.append('Pressure')
+            self.outtab.append(self.rescols[key]['pressure'])
+        for key in self.H_species.keys():
+            header_line_2.append(key)
+            header_line_1.append('H/(H+D)')
+            self.outtab.append(self.rescols[key]['ratio'])
+        for key in ['residual','duration']:
+            header_line_1.append('Fitting')
+            header_line_2.append(key)
+            self.outtab.append(outcols[key])
+
+        self.outtab = sp.array(self.outtab)
+        self.outtab = sp.transpose(self.outtab)
+        self.outtab = list(self.outtab)
+        self.outtab = [header_line_2] + [header_line_1] + self.outtab
+
+        massheader = [self.time_col_name]
+        self.outsimtracecol = [sp.array(self.rescols[self.time_col])]
+        for mass in self.masses_of_interest:
+            massheader.append("%s AMU" %mass)
+            self.outsimtracecol.append(self.simtracecol[mass])
+        self.outsimtrace = list(sp.transpose(sp.array(self.outsimtracecol)))
+        self.outsimtrace = [massheader] + self.outsimtrace"""
         
         self.calibrated = True
         
@@ -603,11 +635,6 @@ class Trace:
                     self.columns[mass] = self.columns[mass] - sp.mean(self.columns[mass][bgr_range])
                     
     def correct_offset(self, offset_mass):
-        """Correction of the offset, defined by the offset signal
-        Args: offset_mass - integer or list of integers
-        If list of integers is given, the offset signal is the average signal value from specified masses.
-        This function overrides the original columns"""
-        
         if type(offset_mass) == int:
             offset_mass = [offset_mass]
         self.offset_mass = list(set(offset_mass) & set(self.header_int))
@@ -621,7 +648,6 @@ class Trace:
                 self.columns[mass] -= self.columns['offset']
             
     def clip_negative(self, limit=0):
-        """Wrapper for the .clip function for all mass columns"""
         for mass in self.header_int:
             self.columns[mass] = self.columns[mass].clip(limit)
   
@@ -753,17 +779,6 @@ class Trace:
 class Profile:
     
     def __init__(self, mass_col, intensity_col, tag, default=None):
-        """Create a Profile object and fill it with data
-        Parameters:
-        :param massc_col: mass column (list or array)
-        :param intensity_col: intensity column (list or array), must have same dimension as mass column
-        :param tag: dict of metadata
-                            time_unit   unit of time vector
-                            title       set data title
-        :param default: dict of default values (see set_default_values for understood options)
-        :return None
-        """
-        
         
         self.type = "Profile"
         self.mass_col = sp.array(mass_col)
@@ -805,7 +820,7 @@ class Profile:
         
         if len(self.header_int) > 0:
             self.filled = True
-        # Title of the object. If not in tag, then name automatically with the default title
+        # ime objekta - ce ni v tag-u, se avtoimenuje
         if 'title' not in self.tag.keys():
             self.tag['title'] = self.def_val['profile_name']
             
@@ -816,7 +831,7 @@ class Profile:
             self.molecules.init_CP()
             self.make_recorded()
     
-    def make_recorded(self): # Not Profile specific
+    def make_recorded(self):
         try:
             max_mass = self.molecules.max_mass
         except AttributeError:
@@ -826,11 +841,11 @@ class Profile:
             if i in self.header_int:
                 self.recorded[i] = 1
             
-    def replace_CP(self, path): # Not profile specific
+    def replace_CP(self, path):
         self.molecules.init_CP(path)
 
 
-    def make_candidates(self): # Not profile specific
+    def make_candidates(self):
         
         self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
         
@@ -857,8 +872,6 @@ class Profile:
         #for i in range(self.header_int[-1] + 1):
         #    if i in self.header_int:
         #        self.recorded[i] = 1
-        
-        # Can go to make candidates up to here
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
         
@@ -909,7 +922,6 @@ class Profile:
             if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
                 self.calib_masses_of_interest.append(mass)
         self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
-        # Up to here -> make calibration candidates
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
         

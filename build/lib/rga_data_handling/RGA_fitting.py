@@ -6,7 +6,6 @@
 
 # Merged with new candidates (30.11.2018)
 # TO DO: Export candidates, consider import candidates
-# TO DO: new class RGA_fitting, reads molecules from parent/running class
 
 import sympy
 import scipy as sp
@@ -20,7 +19,6 @@ version = '1.2'
 
 def check_candidates(hydrogen_species,non_H_species):
     #check if format of candidate molecules is OK
-    # TO DO return {candidate: error codes}
     errors = []
     for key in hydrogen_species.keys():
         specimen = hydrogen_species[key]
@@ -77,8 +75,6 @@ def check_candidates(hydrogen_species,non_H_species):
 
 
 def make_candidates(molecules, hydrogen_species, non_H_species):
-    
-    # TO DO: raise warning
 
     candidates = []
     ratios = []
@@ -192,14 +188,11 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     # init_vals
     # boundaries
     # TO DO - popravi na novo verzijo kandidatov
-    # TO DO - check upper TO DO
 
 
     # najprej identifikacija molekule, ce je mogoce, in priprava definicije za construct_full
     # construct_full zahteva: NH_mass, nAt, p(AKA ratio), peak_list
     # 14.5.2019 - mol_def key names updated to molecules3 standard names
-    # TO DO: error handling - error code or exception
-    # Error handling: warning on non-critical, exception on critical
 
     candidates = []
     parameters = []
@@ -437,7 +430,6 @@ def export_CP_old(CPdict):
     return outtab
     
 def export_CP(calib):
-    # TO DO- move to molecules or calibration reader
     """Prepare the cracking pattern definition for export"""
     # Construction of the output calibration file
     out_new = [['# Definition of cracking patterns for rga_data_handling objects'], 
