@@ -13,16 +13,16 @@
 version = '2.1'
 versions = {'Class': version}
 
-import molecules3 as molecules2
+from . import molecules3 as molecules2
 import scipy as sp
 import random
 from copy import deepcopy
 import time
-from RGA_calibration_reader import write_to_TSV
+from .RGA_calibration_reader import write_to_TSV
 
 try:
     #from RGA_fitting import version, check_candidates, make_candidates, check_disregard, export_CP, export_candidates, make_calibration_candidates, fit_line
-    from RGA_fitting import version, RGA_fitting, export_CP, export_candidates
+    from .RGA_fitting import version, RGA_fitting, export_CP, export_candidates
     versions['RGA_fitting'] = version
     fitting_loaded = True
 except ImportError:

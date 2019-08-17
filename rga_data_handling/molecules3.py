@@ -18,7 +18,7 @@ import scipy as sp
 import math
 #import sympy
 from copy import deepcopy
-from RGA_calibration_reader import read_calibration_file, read_old_version
+from .RGA_calibration_reader import read_calibration_file, read_old_version
 
 version = '2.0b'
 

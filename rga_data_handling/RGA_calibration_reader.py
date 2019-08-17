@@ -5,7 +5,7 @@
 # IPP Garching
 
 from copy import deepcopy
-from RGA_fitting import export_CP
+#from .RGA_fitting import export_CP
 
 version = '1.0b'
 

@@ -5,8 +5,8 @@
 # IPP, Garching
 
 # Merged with new candidates (30.11.2018)
-# TO DO: Export candidates, consider import candidates
-# TO DO: new class RGA_fitting, reads molecules from parent/running class
+# TO DO: Export candidates (done), consider import candidates
+# TO DO: new class RGA_fitting, reads molecules from parent/running class (done 17.8.2019)
 
 import sympy
 import scipy as sp
@@ -14,7 +14,7 @@ import scipy.optimize as so
 from math import ceil, log10, sqrt
 import time
 from copy import deepcopy
-import molecules3 as molecules2
+from . import molecules3 as molecules2
 
 
 version = '2.0b'
