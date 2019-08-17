@@ -11,12 +11,13 @@
 import sympy
 import scipy as sp
 import scipy.optimize as so
-import math
+from math import ceil, log10, sqrt
 import time
 from copy import deepcopy
+import molecules3 as molecules2
 
 
-version = '1.2'
+version = '2.0b'
 
 def check_candidates(hydrogen_species,non_H_species):
     #check if format of candidate molecules is OK
@@ -339,10 +340,10 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
                     pass
             
     try:
-        maxvalexp = math.ceil(-math.log10(max(line[1:])))
+        maxvalexp = ceil(-log10(max(line[1:])))
     except ValueError:
         try:
-            maxvalexp = math.ceil(-math.log10(-min(line[1:])))
+            maxvalexp = ceil(-log10(-min(line[1:])))
         except ValueError:
             maxvalexp = 0
     maxval = 10**maxvalexp
@@ -394,7 +395,7 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
         rez = so.minimize(residual,init_vals_final,bounds=boundaries_final,method='L-BFGS-B')
     else:
         rez = so.basinhopping(residual, init_vals_final, niter = n_iter, minimizer_kwargs = dict(method='L-BFGS-B', bounds=boundaries_final))
-    residual_value = math.sqrt(rez.fun*maxval**-2)
+    residual_value = sqrt(rez.fun*maxval**-2)
     loc_duration = time.clock() - start_time
 
     results={}
@@ -435,6 +436,36 @@ def export_CP_old(CPdict):
                 line = [key] + ["N/A","N/A","N/A"]
             outtab.append(line)
     return outtab
+    
+    
+class RGA_fitting:
+     
+            
+    def make_candidates(self):
+        """Prepare fitting parameters from the specified candidate molecules"""
+        self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
+        self.parameters = self.candidates_dict['parameters'] # Not Trace specific
+        self.pressures = self.candidates_dict['pressures'] # Not Trace specific
+        self.ratios = self.candidates_dict['ratios'] # Not Trace specific
+        self.masses_of_interest = []# Not Trace specific
+        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
+            if sum(self.candidates_dict['candidates'])[mass] != 0:
+                self.masses_of_interest.append(mass)
+        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
+        
+    def make_calibration_candidates(self, mol_def, ratio_def, peak_defs):
+        """Prepare fitting parameters from the specified calibration parameters"""
+        self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
+        self.calib_masses_of_interest = []
+        for mass in range(1,self.header_int[-1] + 1):
+            if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
+                self.calib_masses_of_interest.append(mass)
+        self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
+        
+    def fit_line(self, line, n_iter):
+        return fit_line(line, self.recorded, self.header_int, self.candidates_dict, self.disregard, n_iter=n_iter)
+        
+        
     
 def export_CP(calib):
     # TO DO- move to molecules or calibration reader

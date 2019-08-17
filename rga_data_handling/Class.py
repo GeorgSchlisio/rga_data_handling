@@ -21,7 +21,8 @@ import time
 from RGA_calibration_reader import write_to_TSV
 
 try:
-    from RGA_fitting import version, check_candidates, make_candidates, check_disregard, export_CP, export_candidates, make_calibration_candidates, fit_line
+    #from RGA_fitting import version, check_candidates, make_candidates, check_disregard, export_CP, export_candidates, make_calibration_candidates, fit_line
+    from RGA_fitting import version, RGA_fitting, export_CP, export_candidates
     versions['RGA_fitting'] = version
     fitting_loaded = True
 except ImportError:
@@ -173,8 +174,39 @@ def read_molecule_definition(molecules, molecule):
 
 #load_default_values({})
 
+class RGA_base_container:
+    # Base class for RGA data
+    # provides initializing cracking patterns, preparation of fitting parameters
+    # etc
 
-class Trace:
+    def __init__(self):
+        # Initialize mass-space and cracking patterns
+        self.molecules = molecules2.mass_space(self.header_int[-1])
+        #TO DO - by default, initialize cracking patterns with appropriate calibration files
+        self.molecules.init_CP()
+        self.make_recorded()
+        
+    def make_recorded(self): # not Trace specific
+        # make the 'recorded' array
+        # an array the lengh of the mass_space dimension
+        # at each mass index, element = 1 if there are recordings at this mass, 0 otherwise
+        try:
+            max_mass = self.molecules.max_mass
+        except AttributeError:
+            max_mass = max(self.header_int)
+        self.recorded = sp.zeros(max_mass + 1)
+        for i in range(max(self.header_int) + 1):
+            if i in self.header_int:
+                self.recorded[i] = 1
+            
+    def replace_CP(self, path): # Not Trace specific
+        """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
+        if self.filled:
+            self.molecules.init_CP(path)
+            self.make_recorded()
+
+
+class Trace(RGA_base_container, RGA_fitting):
     # RGA data container for time trace shaped data
     # Data is provided as a dictionary in 'columns'
     # column names: if in known_time_labels the column will be assigned as a time column
@@ -259,16 +291,20 @@ class Trace:
             if 'title' not in self.tag.keys():
                 self.tag['title'] = self.def_val['trace_name']
             # Initialize mass-space and cracking patterns
-            self.molecules = molecules2.mass_space(self.header_int[-1])
+            # This has now been moved to RGA_base_container
+            #self.molecules = molecules2.mass_space(self.header_int[-1])
             #TO DO - by default, initialize cracking patterns with appropriate calibration files
-            self.molecules.init_CP()
+            #self.molecules.init_CP()
             # Construction of the 'recorded' array
             # moved to deconvolute
             # moved back - needed by calibrate too
             # TO DO: make recorded at re-initialization of mass space
-            self.make_recorded()
+            #self.make_recorded()
+            
+            RGA_base_container.__init__(self)
     
-    def make_recorded(self): # not Trace specific
+    # now moved to RGA_base_container
+    """def make_recorded(self): # not Trace specific
         try:
             max_mass = self.molecules.max_mass
         except AttributeError:
@@ -276,13 +312,14 @@ class Trace:
         self.recorded = sp.zeros(max_mass + 1)
         for i in range(max(self.header_int) + 1):
             if i in self.header_int:
-                self.recorded[i] = 1
+                self.recorded[i] = 1"""
             
-    def replace_CP(self, path): # Not Trace specific
-        """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
-        if self.filled:
-            self.molecules.init_CP(path)
-            self.make_recorded()    
+    # now moved to RGA_base_container
+    """def replace_CP(self, path): # Not Trace specific"""
+    ##    """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
+    #    """if self.filled:
+    #        self.molecules.init_CP(path)
+    #        self.make_recorded()    """
             
     def set_timecol(self, time_key):
         """Designate one of the columns as the time column"""
@@ -367,28 +404,20 @@ class Trace:
             profile.masses_of_interest = self.masses_of_interest
         return profile
     
-    def make_candidates(self): # Not Trace specific
-        """Make data fitting candidates"""
-        self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
+    # now in RGA_fitting
+    #def make_candidates(self): # Not Trace specific
+    #    """Make data fitting candidates"""
+    #    self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
     
     # TO DO: keep track of make_recorded    
     def deconvolute(self, H_species, non_H_species, disregard, start_time, stop_time, step, n_iter=0):
-        # Trace specific, but with not Trace specific parts
         """Deconvolute the data with H_species and non_H_species"""
         self.H_species = H_species # Not Trace specific
         self.non_H_species = non_H_species # Not Trace specific
         self.disregard = disregard # Not Trace specific
         
-        self.make_candidates() # Not Trace specific
-        self.parameters = self.candidates_dict['parameters'] # Not Trace specific
-        self.pressures = self.candidates_dict['pressures'] # Not Trace specific
-        self.ratios = self.candidates_dict['ratios'] # Not Trace specific
-        self.masses_of_interest = []# Not Trace specific
-        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
-            if sum(self.candidates_dict['candidates'])[mass] != 0:
-                self.masses_of_interest.append(mass)
-        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
-        
+        self.make_candidates() # Now from RGA_fitting
+
         # construction of the recorded array
         # now based on the masses_of_interest        
         
@@ -419,7 +448,8 @@ class Trace:
         for ti in ti_list:
             line = self.make_line(ti)
             
-            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
+            #results, sim_masses = fit_line(line, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
+            results, sim_masses = self.fit_line(line, n_iter=n_iter) # now from RGA_fitting
             
             outcols[self.time_col].append(line[0])
             for prs in self.pressures:
@@ -516,12 +546,7 @@ class Trace:
             self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
         self.calib_tag = {}
         # pass the molecule definition to the make_calibration_candidates function
-        self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
-        self.calib_masses_of_interest = []
-        for mass in range(1,self.header_int[-1] + 1):
-            if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
-                self.calib_masses_of_interest.append(mass)
-        self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
+        self.make_calibration_candidates(mol_def, ratio_def, peak_defs)
         # make calibration candidates up to here
         
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
@@ -750,7 +775,7 @@ class Trace:
             pass
 
 
-class Profile:
+class Profile(RGA_base_container, RGA_fitting):
     
     def __init__(self, mass_col, intensity_col, tag, default=None):
         """Create a Profile object and fill it with data
@@ -810,49 +835,54 @@ class Profile:
             self.tag['title'] = self.def_val['profile_name']
             
         if self.filled:
-            # Initialize mass-space and cracking patterns
-            self.molecules = molecules2.mass_space(self.header_int[-1])
-            #TO DO - by default, initialize cracking patterns with appropriate calibration files
-            self.molecules.init_CP()
-            self.make_recorded()
-    
-    def make_recorded(self): # Not Profile specific
-        try:
-            max_mass = self.molecules.max_mass
-        except AttributeError:
-            max_mass = max(self.header_int)
-        self.recorded = sp.zeros(max_mass + 1)
-        for i in range(max(self.header_int) + 1):
-            if i in self.header_int:
-                self.recorded[i] = 1
+            RGA_base_container.__init__(self)
+            # TO DO: init RGA_base_container
             
-    def replace_CP(self, path): # Not profile specific
-        self.molecules.init_CP(path)
+            
+            # Initialize mass-space and cracking patterns
+            #self.molecules = molecules2.mass_space(self.header_int[-1])
+            #TO DO - by default, initialize cracking patterns with appropriate calibration files
+            #self.molecules.init_CP()
+            #self.make_recorded()
+    
+    #def make_recorded(self): # Not Profile specific
+    #    try:
+    #        max_mass = self.molecules.max_mass
+    #    except AttributeError:
+    #        max_mass = max(self.header_int)
+    #    self.recorded = sp.zeros(max_mass + 1)
+    #    for i in range(max(self.header_int) + 1):
+    #        if i in self.header_int:
+    #            self.recorded[i] = 1
+            
+    #def replace_CP(self, path): # Not profile specific
+    #    self.molecules.init_CP(path)
 
 
-    def make_candidates(self): # Not profile specific
+    #def make_candidates(self): # Not profile specific
         
-        self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
+    #    self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
         
     def deconvolute(self, H_species, non_H_species, disregard, n_iter=0):
         self.H_species = H_species
         self.non_H_species = non_H_species
         self.disregard = disregard
         
-        self.make_candidates()
-        self.parameters = self.candidates_dict['parameters']
-        self.pressures = self.candidates_dict['pressures']
-        self.ratios = self.candidates_dict['ratios']
-        self.masses_of_interest = []
-        for mass in range(1,len(sum(self.candidates_dict['candidates']))):
-            if sum(self.candidates_dict['candidates'])[mass] != 0:
-                self.masses_of_interest.append(mass)
-        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
+        self.make_candidates() # Now from RGA_fitting
+        # the following code now a part of RGA_fitting, delete when confirmed working
+        #self.parameters = self.candidates_dict['parameters']
+        #self.pressures = self.candidates_dict['pressures']
+        #self.ratios = self.candidates_dict['ratios']
+        #self.masses_of_interest = []
+        #for mass in range(1,len(sum(self.candidates_dict['candidates']))):
+        #    if sum(self.candidates_dict['candidates'])[mass] != 0:
+        #        self.masses_of_interest.append(mass)
+        #self.candidates_dict['masses_of_interest'] = self.masses_of_interest
         
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recorded = self.make_recorded()
+        #self.recorded = self.make_recorded()
         #self.recorded = sp.zeros(max(self.header_int) + 1)
         #for i in range(self.header_int[-1] + 1):
         #    if i in self.header_int:
@@ -860,7 +890,8 @@ class Profile:
         
         # Can go to make candidates up to here
         
-        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
+        #results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
+        results, sim_masses = self.fit_line(self.MID_col, n_iter=n_iter)
         
         resline = {}
         for prs in self.pressures:
@@ -903,12 +934,16 @@ class Profile:
         else:
             self.calib_tag['title'] = "Calibration of %s" %self.tag['title']
             
-        self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
-        self.calib_masses_of_interest = []
-        for mass in range(1,self.header_int[-1] + 1):
-            if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
-                self.calib_masses_of_interest.append(mass)
-        self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
+        # pass the molecule definition to the make_calibration_candidates function
+        self.make_calibration_candidates(mol_def, ratio_def, peak_defs)
+        # make calibration candidates up to here
+            
+        #self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
+        #self.calib_masses_of_interest = []
+        #for mass in range(1,self.header_int[-1] + 1):
+        #    if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
+        #        self.calib_masses_of_interest.append(mass)
+        #self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
         # Up to here -> make calibration candidates
         
         results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
