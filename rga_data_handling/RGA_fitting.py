@@ -455,12 +455,17 @@ class RGA_fitting:
         
     def make_calibration_candidates(self, mol_def, ratio_def, peak_defs):
         """Prepare fitting parameters from the specified calibration parameters"""
-        self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
-        self.calib_masses_of_interest = []
+        #self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)  
+        # the candidates will be passed to self.fit_line which doesn't differentiate between different types of candidates
+        # thus, they must be named "cadidates" and not "calibration_candidates"
+        self.candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)
+        # on the other hand, other functions like plotting expect a calib_candidates attribute...
+        self.masses_of_interest = []
         for mass in range(1,self.header_int[-1] + 1):
-            if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
-                self.calib_masses_of_interest.append(mass)
-        self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
+            if sum(self.candidates_dict['candidates'])[mass] != 0:
+                self.masses_of_interest.append(mass)
+        self.candidates_dict['masses_of_interest'] = self.masses_of_interest
+        self.calib_candidates_dict = self.candidates_dict
         
     def fit_line(self, line, n_iter):
         return fit_line(line, self.recorded, self.header_int, self.candidates_dict, self.disregard, n_iter=n_iter)

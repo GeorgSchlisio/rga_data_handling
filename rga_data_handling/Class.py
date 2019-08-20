@@ -37,13 +37,6 @@ known_time_labels = ['time', 'hours'] # labels of columns which are automaticall
 
 # Import the default values
 
-"""try:
-    from __main__ import default_values
-    default_loaded = True
-except:
-    default_loaded = False
-    default_values = {}"""
-
 def load_default_values(new_defaults=None):
     """
     Complete default dict
@@ -67,19 +60,7 @@ def pin_point(input_list, sought_value):
     temp_list = list(map(abs, input_col - sought_value))
     nearest_index = temp_list.index(min(temp_list))
     return nearest_index
-    
-# write_to_TSV now moved to RGA_calibration_reader
-# as it is a input-output function, anyway.
-'''def write_to_TSV(path, inputlist, line_light='False'):
-    """Write a 2D matrix as a TSV file, saved to path"""
-    if line_light:
-        linebreak = '\n'
-    else:
-        linebreak = '\r\n'
-    outfile = open(path,'w')
-    for line in inputlist:
-        outfile.writelines("%s%s" %("\t".join(map(str,line)), linebreak))
-    outfile.close()'''
+
 
 def PadRight(inputlist, TargetLength, FillValue):
     """Append FillValue to inputlist until length(inputlist) == TargetLength"""
@@ -172,7 +153,6 @@ def read_molecule_definition(molecules, molecule):
             
     return err, {'mol_def': mol_def, 'molecule': mol_name}
 
-#load_default_values({})
 
 class RGA_base_container:
     # Base class for RGA data
@@ -292,34 +272,8 @@ class Trace(RGA_base_container, RGA_fitting):
                 self.tag['title'] = self.def_val['trace_name']
             # Initialize mass-space and cracking patterns
             # This has now been moved to RGA_base_container
-            #self.molecules = molecules2.mass_space(self.header_int[-1])
-            #TO DO - by default, initialize cracking patterns with appropriate calibration files
-            #self.molecules.init_CP()
-            # Construction of the 'recorded' array
-            # moved to deconvolute
-            # moved back - needed by calibrate too
-            # TO DO: make recorded at re-initialization of mass space
-            #self.make_recorded()
-            
+
             RGA_base_container.__init__(self)
-    
-    # now moved to RGA_base_container
-    """def make_recorded(self): # not Trace specific
-        try:
-            max_mass = self.molecules.max_mass
-        except AttributeError:
-            max_mass = max(self.header_int)
-        self.recorded = sp.zeros(max_mass + 1)
-        for i in range(max(self.header_int) + 1):
-            if i in self.header_int:
-                self.recorded[i] = 1"""
-            
-    # now moved to RGA_base_container
-    """def replace_CP(self, path): # Not Trace specific"""
-    ##    """Replace the cracking patterns. path can be string with the calibration file location or calibration dictionary"""
-    #    """if self.filled:
-    #        self.molecules.init_CP(path)
-    #        self.make_recorded()    """
             
     def set_timecol(self, time_key):
         """Designate one of the columns as the time column"""
@@ -421,13 +375,7 @@ class Trace(RGA_base_container, RGA_fitting):
         # construction of the recorded array
         # now based on the masses_of_interest        
         
-        self.recoded = self.make_recorded() # Not Trace specific
-        #self.recorded = sp.zeros(max(self.header_int) + 1)
-        #for i in range(max(self.header_int) + 1):
-        #    if i in self.header_int:
-        #        self.recorded[i] = 1
-        # Up to here - can be moved to make candidates
-        
+        self.recoded = self.make_recorded() 
         # Trace specific part starts here
         ti_list = self.columns['index'][(start_time <= self.columns[self.time_col]) * (stop_time >= self.columns[self.time_col])] 
         if len(ti_list) == 0:
@@ -447,8 +395,7 @@ class Trace(RGA_base_container, RGA_fitting):
         glob_start = time.clock()
         for ti in ti_list:
             line = self.make_line(ti)
-            
-            #results, sim_masses = fit_line(line, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
+
             results, sim_masses = self.fit_line(line, n_iter=n_iter) # now from RGA_fitting
             
             outcols[self.time_col].append(line[0])
@@ -531,7 +478,7 @@ class Trace(RGA_base_container, RGA_fitting):
         self.deconvoluted = True
         if self.echo:
             # TO DO: print -> report: Fitting {title} for {candidates}, duration, errors
-            print "Deconvolutiuon for %s done, duration %s s." %(self.tag['title'], self.glob_duration)
+            print("Deconvolutiuon for %s done, duration %s s." %(self.tag['title'], self.glob_duration))
         
     def calibrate(self, molecule, ratio_def, peak_defs, disregard, start_time, stop_time, step, n_iter=0):
         
@@ -568,8 +515,8 @@ class Trace(RGA_base_container, RGA_fitting):
         for ti in ti_list:
             line = self.make_line(ti)
             
-            results, sim_masses = fit_line(line, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
-            
+            #results, sim_masses = fit_line(line, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
+            results, sim_masses = self.fit_line(line, n_iter=n_iter)
             outcols[self.time_col].append(line[0])
             
             for parameter in self.calib_candidates_dict['parameters']:
@@ -836,61 +783,13 @@ class Profile(RGA_base_container, RGA_fitting):
             
         if self.filled:
             RGA_base_container.__init__(self)
-            # TO DO: init RGA_base_container
-            
-            
-            # Initialize mass-space and cracking patterns
-            #self.molecules = molecules2.mass_space(self.header_int[-1])
-            #TO DO - by default, initialize cracking patterns with appropriate calibration files
-            #self.molecules.init_CP()
-            #self.make_recorded()
-    
-    #def make_recorded(self): # Not Profile specific
-    #    try:
-    #        max_mass = self.molecules.max_mass
-    #    except AttributeError:
-    #        max_mass = max(self.header_int)
-    #    self.recorded = sp.zeros(max_mass + 1)
-    #    for i in range(max(self.header_int) + 1):
-    #        if i in self.header_int:
-    #            self.recorded[i] = 1
-            
-    #def replace_CP(self, path): # Not profile specific
-    #    self.molecules.init_CP(path)
-
-
-    #def make_candidates(self): # Not profile specific
-        
-    #    self.candidates_dict = make_candidates(self.molecules, self.H_species, self.non_H_species)
-        
+                   
     def deconvolute(self, H_species, non_H_species, disregard, n_iter=0):
         self.H_species = H_species
         self.non_H_species = non_H_species
         self.disregard = disregard
         
         self.make_candidates() # Now from RGA_fitting
-        # the following code now a part of RGA_fitting, delete when confirmed working
-        #self.parameters = self.candidates_dict['parameters']
-        #self.pressures = self.candidates_dict['pressures']
-        #self.ratios = self.candidates_dict['ratios']
-        #self.masses_of_interest = []
-        #for mass in range(1,len(sum(self.candidates_dict['candidates']))):
-        #    if sum(self.candidates_dict['candidates'])[mass] != 0:
-        #        self.masses_of_interest.append(mass)
-        #self.candidates_dict['masses_of_interest'] = self.masses_of_interest
-        
-        # construction of the recorded array
-        # now based on the masses_of_interest        
-        
-        #self.recorded = self.make_recorded()
-        #self.recorded = sp.zeros(max(self.header_int) + 1)
-        #for i in range(self.header_int[-1] + 1):
-        #    if i in self.header_int:
-        #        self.recorded[i] = 1
-        
-        # Can go to make candidates up to here
-        
-        #results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.candidates_dict, disregard, n_iter=n_iter)
         results, sim_masses = self.fit_line(self.MID_col, n_iter=n_iter)
         
         resline = {}
@@ -936,17 +835,9 @@ class Profile(RGA_base_container, RGA_fitting):
             
         # pass the molecule definition to the make_calibration_candidates function
         self.make_calibration_candidates(mol_def, ratio_def, peak_defs)
-        # make calibration candidates up to here
-            
-        #self.calib_candidates_dict = make_calibration_candidates(self.molecules, mol_def, ratio_def, peak_defs)        
-        #self.calib_masses_of_interest = []
-        #for mass in range(1,self.header_int[-1] + 1):
-        #    if sum(self.calib_candidates_dict['candidates'])[mass] != 0:
-        #        self.calib_masses_of_interest.append(mass)
-        #self.calib_candidates_dict['masses_of_interest'] = self.calib_masses_of_interest
-        # Up to here -> make calibration candidates
         
-        results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
+        #results, sim_masses = fit_line(self.MID_col, self.recorded, self.header_int, self.calib_candidates_dict, disregard, n_iter=n_iter)
+        results, sim_masses = self.fit_line(line, n_iter=n_iter)
         
         self.calib_line = {}
         self.calib_line['pressure'] = results['pres']
@@ -1055,7 +946,7 @@ def join_traces(in_trace_list, echo=False):
     for entry in tracelist[1:]:
         if entry[2] != tc:
             err = 101
-            print "Time col not same in all traces."
+            print("Time col not same in all traces.")
 
     rescols_j = {}
     HM_j = {}
@@ -1088,7 +979,7 @@ def join_traces(in_trace_list, echo=False):
         zerocol_t = sp.zeros(len(rc_t[tc]))
         
         if echo:
-            print "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
+            print( "trace starts at: %s, H molecules: %s, non-H molecules: %s" %(start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys())))
 
         for gas in HM_j.keys():
             if gas not in HM_t.keys():
@@ -1147,7 +1038,7 @@ def join_traces_calib(in_trace_list):
     tc = tracelist[0][2]
     for entry in tracelist[1:]:
         if entry[2] != tc:
-            print "Time col not same in all traces."
+            print( "Time col not same in all traces.")
 
     calibcols_j = {}
     peaks_j = []
@@ -1173,7 +1064,7 @@ def join_traces_calib(in_trace_list):
         zerocol_j = sp.zeros(len(calibcols_j[tc]))
         zerocol_t = sp.zeros(len(cc_t[tc]))
 
-        print "trace starts at: %s, peaks: %s" %(entry[0], ", ".join(map(str, peaks_t)))
+        print("trace starts at: %s, peaks: %s" %(entry[0], ", ".join(map(str, peaks_t))))
 
         for peak in peaks_j:
             if peak not in peaks_t:
@@ -1220,6 +1111,7 @@ def join_traces_calib(in_trace_list):
 # common: 'ammonia'
 
 # Moved to Trace as method
+# TO DO: consider a universal version to work both on rescols and resline
 """
 def total_isotopes_trace(trace, isotope_list, common):
     #if common not in trace.rescols.keys():
