@@ -7,7 +7,7 @@
 # October 2016
 # aleksander.drenik@ipp.mpg.de
 
-from Class import perturb_CP
+from .Class import perturb_CP
 from copy import deepcopy
 import matplotlib.pyplot as plt
 import scipy as sp
