@@ -37,9 +37,9 @@ def fit_many_times(container,times,perturb,to_join,*args,**kwargs):
             make_total = False
     except:
         make_total = False
-    print "Doing %s for %s :" %(num_of_goes, container.tag['title'])
+    print("Doing %s for %s :" %(num_of_goes, container.tag['title']))
     for i in range(num_of_goes):
-        print " | %s" %(i + 1),
+        print(" | %s" %(i + 1)),
         # make a new copy of the original CP,
         # otherwise perturb_CP will override the original copy as well
         CP_new = deepcopy(CP_orig)
@@ -53,7 +53,7 @@ def fit_many_times(container,times,perturb,to_join,*args,**kwargs):
                 container_new.join_isotopes(isotopes_list[j], common_list[j])
         traces.append(container_new)
         tot_dur += container_new.glob_duration
-    print "deconvolution done, total duration %s seconds" %tot_dur
+    print("deconvolution done, total duration %s seconds" %tot_dur)
     return traces
     
 def povpreci(sims):
@@ -202,21 +202,21 @@ def save_traces(data_folder, traces):
     try:
         p_file = open(file_name, 'wb')
     except:
-        print "Error opening %s" %file_name
+        print("Error opening %s" %file_name)
         return [10, t_num]
     try:
         pickle.dump(traces, p_file)
     except:
-        print "Error saving to %s" %file_name
+        print("Error saving to %s" %file_name)
         return [11, t_num]
     p_file.close()
-    print "Saved traces as %s" %file_name
+    print("Saved traces as %s" %file_name)
     return [0, t_num]
     
 def retrieve_traces(data_folder, title, device='RGA3', num=None):
     existing = glob.glob(path.join(data_folder,"%s*.pkl" %title))
     if len(existing) == 0:
-        print "No files found for %s" %title
+        print("No files found for %s" %title)
         return []
 
     num_list = []
@@ -237,17 +237,17 @@ def retrieve_traces(data_folder, title, device='RGA3', num=None):
             if s_num in num_list:
                 t_num = s_num
             else:
-                print 'Number %s not found.' %num,
+                print('Number %s not found.' %num),
                 t_num = max(num_list)
         except ValueError:
             t_num = max(num_list)
-            print 'Invalid number specification: %s' %num,
+            print('Invalid number specification: %s' %num),
     file_name = path.join(data_folder, "%s_%s.pkl" %(title, str(t_num).zfill(2)))
     if file_name not in existing:
-        print "Caramba! %s" %file_name
+        print("Caramba! %s" %file_name)
         return []
     else:
-        print "Loading %s" %file_name
+        print("Loading %s" %file_name)
         p_file = open(file_name, 'rb')
         trs = pickle.load(p_file)
         
