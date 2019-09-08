@@ -30,31 +30,31 @@ def check_candidates(hydrogen_species,non_H_species):
         ratio_raw = specimen[2]
         err_val = 0
         if mol_name not in molecules.known_hydrogen_species:
-            print "Molecule %s not among hydrogen species" %mol_name
+            print("Molecule %s not among hydrogen species" %mol_name)
             err_val = 1
         if type(pressure) != str:
-            print "Invalid pressure parameter type for %s." %mol_name
+            print("Invalid pressure parameter type for %s." %mol_name)
             err_val = 10
         if type(mol_name) != str:
-            print "Invalid molecule name type for %s." %mol_name
+            print("Invalid molecule name type for %s." %mol_name)
             err_val = 2
         if type(ratio_raw) == list:
             if len(ratio_raw) != 3:
-                print "Wrong H/(D+H) ratio definition for %s" %mol_name
+                print("Wrong H/(D+H) ratio definition for %s" %mol_name)
                 err_val = 50
             else:
                 ratio, ratio_min, ratio_max = ratio_raw
                 if type(ratio) != str:
-                    print "Invalid H/(D+H) ratio parameter type for %s" %mol_name
+                    print("Invalid H/(D+H) ratio parameter type for %s" %mol_name)
                     err_val = 51
                 if type(ratio_min) not in [int,float] or type(ratio_max) not in [int,float]:
-                    print "Invalid H/(D+H) ratio boundary type for %s" %mol_name
+                    print("Invalid H/(D+H) ratio boundary type for %s" %mol_name)
                     err_val = 52
                 if ratio_min > ratio_max or not(0 <= ratio_min <= 1) or not(0 <= ratio_max <= 1):
-                    print "Invalid H/(D+H) ratio boundary definition for %s" %mol_name
+                    print("Invalid H/(D+H) ratio boundary definition for %s" %mol_name)
                     err_val = 55
         elif type(ratio_raw) not in [str,int,float]:
-            print "Invalid H/(D+H) ratio parameter type for %s" %mol_name
+            print("Invalid H/(D+H) ratio parameter type for %s" %mol_name)
             err_val = 40
         errors.append(err_val)
         
@@ -64,13 +64,13 @@ def check_candidates(hydrogen_species,non_H_species):
         mol_name = specimen[1]
         err_val = 0
         if mol_name not in molecules.known_other_species:
-            print "Molecule %s not among non-hydrogen species" %mol_name
+            print("Molecule %s not among non-hydrogen species" %mol_name)
             err_val = 1
         if type(pressure) != str:
-            print "Invalid pressure parameter type for %s." %mol_name
+            print("Invalid pressure parameter type for %s." %mol_name)
             err_val = 10
         if type(mol_name) != str:
-            print "Invalid molecule name type for %s." %mol_name
+            print("Invalid molecule name type for %s." %mol_name)
             err_val = 2
         errors.append(err_val)
 
@@ -112,7 +112,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
         #preveri, da je izotopsko razmerje v redu
         if type(ratio_raw) == list:
             if len(ratio_raw) != 3:
-                print "Wrong D/(D+H) ratio definition for %s" %mol_name
+                print("Wrong D/(D+H) ratio definition for %s" %mol_name)
                 continue
             else:
                 ratio = ratio_raw[0]
@@ -221,7 +221,7 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
 
     if type(ratio_def) == list:
         if len(ratio_def) != 3:
-            print "Wrong D/(D+H) ratio definition"
+            print("Wrong D/(D+H) ratio definition")
             #continue
         else:
             ratio = ratio_def[0]
@@ -246,7 +246,7 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     for peak_def in peak_defs:
         if type(peak_def) == list:
             if len(peak_def) != 3:
-                print "Invalid peak definition"
+                print("Invalid peak definition")
                 continue
             if type(peak_def[0]) == str and type(peak_def[1]) in [float, int] and type(peak_def[2]) in [float, int]:
                 parameters.append(peak_def[0])
