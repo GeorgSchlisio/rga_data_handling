@@ -380,7 +380,7 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     
     def residual(x):
         exec(par_string) in locals()
-        return eval(residual_string)
+        return eval(residual_string)[0]
     
     def calculate_masses(x):
         exec(par_string) in locals()
