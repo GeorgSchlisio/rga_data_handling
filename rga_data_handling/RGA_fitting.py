@@ -139,9 +139,9 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
 
         strings_to_exec = []
         strings_to_exec.append("%s = sympy.symbols('%s')" %(par_string, par_string))
-        strings_to_exec.append("local_candidate = %s * molecules.construct('%s', %s)" %(pressure, mol_name, ratio))
         for string in strings_to_exec:
             exec(string)
+        local_candidate = eval("%s * molecules.construct('%s', %s)" %(pressure, mol_name, ratio))
 
         candidates.append(local_candidate)
         
