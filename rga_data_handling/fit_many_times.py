@@ -56,7 +56,7 @@ def fit_many_times(container,times,perturb,to_join,*args,**kwargs):
     print("deconvolution done, total duration %s seconds" %tot_dur)
     return traces
     
-def povpreci(sims):
+def average(sims):
     
     #HM = sims[0].H_species
     #NHM = sims[0].non_H_species
@@ -115,17 +115,17 @@ def povpreci(sims):
     povp_res['defs'] = {'HM': HM, 'NHM': NHM, 'title': title, 'time_col': tc_name}
     return povp_res
     
-def errorbar_results(povprecni, sz=default_sz, lp=2, residual=True, gl=None, ratio_limit=None):
+def errorbar_results(average, sz=default_sz, lp=2, residual=True, gl=None, ratio_limit=None):
     
     # TO DO - kaj s casovno skalo...
     
-    slika = plt.figure()
-    pres = slika.add_subplot(211)
-    rat = slika.add_subplot(212)
-    tc = povprecni['time']
-    HM = povprecni['defs']['HM']
-    NHM = povprecni['defs']['NHM']
-    title = povprecni['defs']['title']
+    fig = plt.figure()
+    pres = fig.add_subplot(211)
+    rat = fig.add_subplot(212)
+    tc = average['time']
+    HM = average['defs']['HM']
+    NHM = average['defs']['NHM']
+    title = average['defs']['title']
     
     if gl != None:
         to_plot_H = list(set(HM.keys()) & set(gl))
@@ -136,16 +136,16 @@ def errorbar_results(povprecni, sz=default_sz, lp=2, residual=True, gl=None, rat
 
             
     for gas in to_plot_H:
-        pres.errorbar(tc, povprecni[gas]['pressure']['val'], yerr = povprecni[gas]['pressure']['std'],
+        pres.errorbar(tc, average[gas]['pressure']['val'], yerr = average[gas]['pressure']['std'],
                        marker = 'o', label = gas)
-        rat.errorbar(tc, povprecni[gas]['ratio']['val'], yerr = povprecni[gas]['ratio']['std'],
+        rat.errorbar(tc, average[gas]['ratio']['val'], yerr = average[gas]['ratio']['std'],
                        marker = 'o', label = gas)
     for gas in to_plot_NH:
-        pres.errorbar(tc, povprecni[gas]['pressure']['val'], yerr = povprecni[gas]['pressure']['std'],
+        pres.errorbar(tc, average[gas]['pressure']['val'], yerr = average[gas]['pressure']['std'],
                        marker = 'o', label = gas)
         
     if residual:
-        pres.errorbar(tc, povprecni['residual']['val'], yerr=povprecni['residual']['std'],
+        pres.errorbar(tc, average['residual']['val'], yerr=average['residual']['std'],
                         marker = 'o', label = 'residual')
     pres.set_ylabel("Pressure", fontsize = sz['label_y'])
     rat.set_ylabel("H/(H+D)", fontsize = sz['label_y'])
@@ -161,8 +161,8 @@ def errorbar_results(povprecni, sz=default_sz, lp=2, residual=True, gl=None, rat
         rat.set_ylim(ratio_limit)
     #rat.set_ylim([0, 1.05])
     rat.tick_params(axis = 'x', labelsize = sz['tick_x'])
-    slika.suptitle(title, fontsize = sz['label_y'])
-    slika.tight_layout(h_pad = -0.25)
+    fig.suptitle(title, fontsize = sz['label_y'])
+    fig.tight_layout(h_pad = -0.25)
     
 def one_trace(traces):
     povp = povpreci(traces)
