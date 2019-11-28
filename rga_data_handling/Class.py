@@ -201,15 +201,20 @@ class RGA_base_container:
 
 
 class Trace(RGA_base_container, RGA_fitting):
-    # RGA data container for time trace shaped data
-    # Data is provided as a dictionary in 'columns'
-    # column names: if in known_time_labels the column will be assigned as a time column
-    # column names: integers - will be assigned as intensity recordings and added to header_int
-    # Other information about the data is provided in the tag (as dictionary)
-    # Internal errors: tag['init_errors']
-    # 101: empty or invalid data dictionary
-    # 102: empty data columns
-    # 103: empty header_int
+    """
+    RGA data container for time trace shaped data
+
+    Usually used in the following way:
+    1) Initialize object with data
+    2) check data validity: self.filled
+    3) deconvolute: self.deconvolute
+    4) calibrate: self.calibrate
+
+    Internal errors: tag['init_errors']
+        101: empty or invalid data dictionary
+        102: empty data columns
+        103: empty header_int
+    """
 
     def __init__(self, columns, tag, default=None):
         """Create a Trace object and fill it with data
