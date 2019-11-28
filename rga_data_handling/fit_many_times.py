@@ -78,16 +78,16 @@ def average(sims):
     title = sims[0].tag["title"]
     tc_name = sims[0].time_col
     tc = sims[0].rescols[tc_name]
-    povp_res = {"time": tc}
+    avg_res = {"time": tc}
     gas_list = HM.keys() + NHM.keys()
     for gas in gas_list:
         qt_list = ["pressure"]
         if gas in HM.keys():
             qt_list.append("ratio")
 
-        povp_res[gas] = {}
+        avg_res[gas] = {}
         for qt in qt_list:
-            povp_res[gas][qt] = {"val": [], "std": []}
+            avg_res[gas][qt] = {"val": [], "std": []}
         for ti in range(len(tc)):
             temp = {}
             for qt in qt_list:
@@ -96,26 +96,26 @@ def average(sims):
                 for what in qt_list:
                     temp[what].append(simtrace.rescols[gas][what][ti])
             for what in qt_list:
-                povp_res[gas][what]["val"].append(sp.mean(temp[what]))
-                povp_res[gas][what]["std"].append(sp.std(temp[what]))
+                avg_res[gas][what]["val"].append(sp.mean(temp[what]))
+                avg_res[gas][what]["std"].append(sp.std(temp[what]))
     for gas in gas_list:
         for what in qt_list:
             for how in ["val", "std"]:
-                povp_res[gas][what][how] = sp.array(povp_res[gas][what][how])
+                avg_res[gas][what][how] = sp.array(avg_res[gas][what][how])
 
     # same for residual and duration
     for what in ["residual", "duration"]:
-        povp_res[what] = {"val": [], "std": []}
+        avg_res[what] = {"val": [], "std": []}
         for ti in range(len(tc)):
             temp = []
             for simtrace in sims:
                 temp.append(simtrace.rescols[what][ti])
-            povp_res[what]["val"].append(sp.mean(temp))
-            povp_res[what]["std"].append(sp.std(temp))
+            avg_res[what]["val"].append(sp.mean(temp))
+            avg_res[what]["std"].append(sp.std(temp))
         for how in ["val", "std"]:
-            povp_res[what][how] = sp.array(povp_res[what][how])
-    povp_res["defs"] = {"HM": HM, "NHM": NHM, "title": title, "time_col": tc_name}
-    return povp_res
+            avg_res[what][how] = sp.array(avg_res[what][how])
+    avg_res["defs"] = {"HM": HM, "NHM": NHM, "title": title, "time_col": tc_name}
+    return avg_res
 
 
 def errorbar_results(
@@ -190,18 +190,18 @@ def errorbar_results(
 
 
 def one_trace(traces):
-    povp = povpreci(traces)
+    average = average(traces)
     trc = traces[0]
     rescols = trc.rescols
-    rescols["time"] = povp["time"]
+    rescols["time"] = average["time"]
 
     for gas in trc.H_species.keys():
         rescols[gas] = {
-            "pressure": povp[gas]["pressure"]["val"],
-            "ratio": povp[gas]["ratio"]["val"],
+            "pressure": average[gas]["pressure"]["val"],
+            "ratio": average[gas]["ratio"]["val"],
         }
     for gas in trc.non_H_species.keys():
-        rescols[gas] = {"pressure": povp[gas]["pressure"]["val"]}
+        rescols[gas] = {"pressure": average[gas]["pressure"]["val"]}
 
     trc.rescols = rescols
     return trc
