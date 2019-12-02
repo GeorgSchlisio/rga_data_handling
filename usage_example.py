@@ -107,7 +107,6 @@ traces = fmt.fit_many_times(
     tr,
     times,
     perturb,
-    [[], ""],
     H_molecules,
     non_H_molecules,
     disregard,
@@ -117,7 +116,7 @@ traces = fmt.fit_many_times(
 )
 
 # average over result traces
-average_trace = fmt.averages(traces)
+average_trace = fmt.average(traces)
 
 # plot results with error bars
 fmt.errorbar_results(average_trace)
