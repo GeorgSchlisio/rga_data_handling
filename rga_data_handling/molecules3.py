@@ -38,7 +38,7 @@ def b_d(k, n, p):
 def branch_one(orig):
     "Isotope branching in removal of one atom. Input: dictionary: {atom: number}"
     branch = []
-    for atom in orig.keys():
+    for atom in orig:
         if orig[atom] == 0:
             continue
         prob = float(orig[atom]) / sum(orig.values())
@@ -66,14 +66,14 @@ def branch_all(mol):
 def branch_to_mass(branches):
     "Calculate masses of isotope branches. Input: branch dictionary. Global: md - atom mass dictionary"
     masses = {}
-    for br_n in branches.keys():
+    for br_n in branches:
         masses[br_n] = {}
         for br_pair in branches[br_n]:
             prob, branch = br_pair
             mass = 0
-            for atom in branch.keys():
+            for atom in branch:
                 mass += atom_mass_d[atom] * branch[atom]
-            if mass in masses[br_n].keys():
+            if mass in masses[br_n]:
                 masses[br_n][mass] += prob
             else:
                 masses[br_n][mass] = prob
@@ -94,7 +94,7 @@ def check_calib(calib):
     # check the definitions of cracking patterns
     # the calib dictionary must include 'H' and 'non-H'
     for key in ["H", "non-H"]:
-        if key not in calib.keys():
+        if key not in calib:
             calib[key] = {}
 
     # H-molecules
@@ -111,7 +111,7 @@ def check_calib(calib):
 
     # check definitions of cracking patterns
     for which in ["H", "non-H"]:
-        for mol in calib[which].keys():
+        for mol in calib[which]:
             defs = calib[which][mol]
             if len(necessary_keys[which] - set(defs.keys())) > 0:
                 # remove the definition from the list
@@ -164,12 +164,12 @@ class mass_space:
         # check if the base contains sufficiently high masses
         # currently works only for non-H molecules
         used_peaks = []
-        for gas in calib["non-H"].keys():
+        for gas in calib["non-H"]:
             peaks = calib["non-H"][gas]["peaks"]
             for peak in peaks:
                 used_peaks.append(peak[0])
         # check for H molecules, assuming the heaviest isotope is deuterium
-        for gas in calib["H"].keys():
+        for gas in calib["H"]:
             CPdef = calib["H"][gas]
             max_mass_H = CPdef["non-H-mass"] + CPdef["H-atoms"] * atom_mass_d["D"]
             used_peaks.append(max_mass_H)
@@ -182,7 +182,7 @@ class mass_space:
             self.make_base(max_peak)
 
         # definition of the non hydrogen molecules
-        for gas in self.calib["non-H"].keys():
+        for gas in self.calib["non-H"]:
             vector = deepcopy(self.base[0])
             CPdef = self.calib["non-H"][gas]
             for peak in CPdef["peaks"]:
@@ -209,7 +209,7 @@ class mass_space:
                 temp = []
                 peak = peak_list[i]
                 m_br = mass_branches[i]
-                for mass in m_br.keys():
+                for mass in m_br:
                     m_prob = m_br[mass]
                     temp.append(m_prob * self.base[mass + NH_mass])
                 # print peak * sum(temp)

@@ -111,7 +111,7 @@ def read_old_version(CP_spec):
                 got_calib_file = False
             # using default values
         elif type(CP_spec) == dict:
-            for key in CP_spec.keys():
+            for key in CP_spec:
                 calib[key] = CP_spec[key]
             calib["source"] = "direct entry"
 
@@ -141,7 +141,7 @@ def read_old_version(CP_spec):
 
     calib_new["comment"] = "Converted from %s" % calib["source"]
 
-    for gas in calib.keys():
+    for gas in calib:
         if gas in H_mol:
             calib_new["H"][gas] = {"peaks": [1]}
             calib_new["H"][gas]["non-H-mass"] = H_molecules_d[gas][2]
@@ -235,7 +235,7 @@ def read_calibration_file(filename):
         calib[active_type][active_name][elements[0]] = to_val
 
     # process the H-molecule clone entries
-    for clone in calib["clone"].keys():
+    for clone in calib["clone"]:
         try:
             source = calib["clone"][clone]["source"]
             clone_def = deepcopy(calib["H"][source])
@@ -299,7 +299,7 @@ def write_to_TSV(path, inputlist, line_light="False"):
     out_new.append('# Definitions of cracking patterns start here.')
     out_new.append('')
 
-    for gas in calib['H'].keys():
+    for gas in calib['H']:
         out_new.append('H-molecule\t%s' %gas)
         CP_def = calib['H'][gas]
         for what in ['non-H-mass', 'H-atoms']:
@@ -310,7 +310,7 @@ def write_to_TSV(path, inputlist, line_light="False"):
             out_new.append('%s\t%s' %(what, CP_def[what]))
         out_new.append('')
         
-    for gas in calib['non-H'].keys():
+    for gas in calib['non-H']:
         out_new.append('non-H-molecule\t%s' %gas)
         CP_def = calib['non-H'][gas]
         for peak in CP_def['peaks']:

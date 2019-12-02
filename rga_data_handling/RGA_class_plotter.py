@@ -26,7 +26,7 @@ def focus_columns(columns, area, time_col_name="time"):
     x_col = columns[time_col_name]
 
     selection = (x_col >= area[0]) * (x_col <= area[1])
-    for key in columns.keys():
+    for key in columns:
         new_columns[key] = columns[key][selection]
 
     return new_columns
@@ -66,7 +66,7 @@ def plot_data_trace(trace, masslist=None):
 
     # x axis title
     x_label = trace.time_col_name
-    # if 'time_unit' in trace.tag.keys():
+    # if 'time_unit' in trace.tag:
     #    if len(trace.tag['time_unit']) > 0:
     #        x_label = "%s [%s]" %(x_label, trace.tag['time_unit'])
 
@@ -130,7 +130,7 @@ def show_results_profile(profile):
 
     pressures = {}
     ratios = {}
-    for key in resline.keys():
+    for key in resline:
         try:
             pressures[key] = resline[key]["pressure"]
         except:

@@ -86,13 +86,13 @@ def perturb_CP(container, perturbation):
     if type(perturbation) in [int, float]:
         # construct the dictionary of perturbation for each molecule in the CP
         for what in ["H", "non-H"]:
-            for mol in CP_new[what].keys():
+            for mol in CP_new[what]:
                 perturb_d[mol] = perturbation
         CP_new["version"] = "%s perturbed by %s" % (CP_new["version"], perturbation)
     elif type(perturbation) == dict:
         # take only the keys that appear in the CP
         for what in ["H", "non-H"]:
-            for mol in CP_new[what].keys():
+            for mol in CP_new[what]:
                 try:
                     perturb_d[mol] = perturbation[mol]
                 except KeyError:
@@ -101,18 +101,18 @@ def perturb_CP(container, perturbation):
     else:
         # invalid perturbation definition, perturb all by 0
         for what in ["H", "non-H"]:
-            for mol in CP_new[what].keys():
+            for mol in CP_new[what]:
                 perturb_d[mol] = 0
         CP_new["version"] = "%s not perturbed - invalid definition of perturbation" % (
             CP_new["version"]
         )
 
-    for mol in CP_new["H"].keys():
+    for mol in CP_new["H"]:
         mol_d = CP_new["H"][mol]
         pks = mol_d["peaks"]
         for i in range(1, len(pks)):
             pks[i] = pks[i] * (1 + 2 * perturb_d[mol] * (random.random() - 0.5))
-    for mol in CP_new["non-H"].keys():
+    for mol in CP_new["non-H"]:
         mol_d = CP_new["non-H"][mol]
         pks = mol_d["peaks"]
         for i in range(1, len(pks)):
@@ -126,7 +126,7 @@ def perturb_CP(container, perturbation):
 def perturb_CP_old(container, perturbation):
     """Perturb the cracking pattern loaded in the container with the magnitude of perturbation"""
     CP_new = container.molecules.calib
-    for key in CP_new.keys():
+    for key in CP_new:
         entry = CP_new[key]
         if type(entry) == list:
             for i in [0, 1]:
@@ -251,7 +251,7 @@ class Trace(RGA_base_container, RGA_fitting):
         self.tag["init_errors"] = []  # Errors encountered in Trace.__init__
         header_int = []  # List of recorded masses, represented by integers
         lengths = {}  # Lengths of all of the columns
-        for key in columns.keys():
+        for key in columns:
             # Check if all columns have the same length
             lengths[key] = len(columns[key])
             try:
@@ -264,7 +264,7 @@ class Trace(RGA_base_container, RGA_fitting):
             self.tag["init_errors"].append(103)
         try:
             bloc_len = min(lengths.values())  # shortest column length
-            for key in self.columns.keys():
+            for key in self.columns:
                 # If a column is longer than the shortest column (bloc_len)
                 # drop any datapoints beyond bloc_len
                 self.columns[key] = self.columns[key][:bloc_len]
@@ -291,7 +291,7 @@ class Trace(RGA_base_container, RGA_fitting):
             self.header_int = sp.array(sorted(header_int))
             # Title of the Trace object
             # If 'title' is not provided in the tag, use default value
-            if "title" not in self.tag.keys():
+            if "title" not in self.tag:
                 self.tag["title"] = self.def_val["trace_name"]
             # Initialize mass-space and cracking patterns
             # This has now been moved to RGA_base_container
@@ -300,7 +300,7 @@ class Trace(RGA_base_container, RGA_fitting):
 
     def set_timecol(self, time_key):
         """Designate one of the columns as the time column"""
-        if time_key in self.columns.keys():
+        if time_key in self.columns:
             self.time_col = time_key
             self.time_col_name = self.time_col.capitalize()
             if "time_unit" in self.tag:
@@ -339,12 +339,12 @@ class Trace(RGA_base_container, RGA_fitting):
         # Produce a profile-like dictionary with results from the deconvolution.
         # From the ti-th line in the results time-trace
         resline = {}
-        for gas in self.H_species.keys():
+        for gas in self.H_species:
             resline[gas] = {
                 "pressure": self.rescols[gas]["pressure"][ti],
                 "ratio": self.rescols[gas]["ratio"][ti],
             }
-        for gas in self.non_H_species.keys():
+        for gas in self.non_H_species:
             resline[gas] = {"pressure": self.rescols[gas]["pressure"][ti]}
         resline["residual"] = self.rescols["residual"][ti]
         resline["duration"] = self.rescols["duration"][ti]
@@ -450,7 +450,7 @@ class Trace(RGA_base_container, RGA_fitting):
         self.rescols["residual"] = sp.array(outcols["residual"])
         self.rescols["duration"] = sp.array(outcols["duration"])
         tablength = len(outcols[self.time_col])
-        for key in self.H_species.keys():
+        for key in self.H_species:
             self.rescols[key] = {}
             if type(self.H_species[key][0]) == list:
                 pres_name = self.H_species[key][0][0]
@@ -465,7 +465,7 @@ class Trace(RGA_base_container, RGA_fitting):
                 self.rescols[key]["ratio"] = sp.array(outcols[self.H_species[key][2]])
             elif type(self.H_species[key][2] in [int, float]):
                 self.rescols[key]["ratio"] = self.H_species[key][2] * sp.ones(tablength)
-        for key in self.non_H_species.keys():
+        for key in self.non_H_species:
             self.rescols[key] = {}
             pres_def = self.non_H_species[key][0]
             if type(pres_def) == list:
@@ -482,15 +482,15 @@ class Trace(RGA_base_container, RGA_fitting):
         header_line_1 = ["Quantity"]
         header_line_2 = [self.time_col_name]
         self.outtab.append(self.rescols[self.time_col])
-        for key in self.H_species.keys():
+        for key in self.H_species:
             header_line_2.append(key)
             header_line_1.append("Pressure")
             self.outtab.append(self.rescols[key]["pressure"])
-        for key in self.non_H_species.keys():
+        for key in self.non_H_species:
             header_line_2.append(key)
             header_line_1.append("Pressure")
             self.outtab.append(self.rescols[key]["pressure"])
-        for key in self.H_species.keys():
+        for key in self.H_species:
             header_line_2.append(key)
             header_line_1.append("H/(H+D)")
             self.outtab.append(self.rescols[key]["ratio"])
@@ -746,7 +746,7 @@ class Trace(RGA_base_container, RGA_fitting):
                 self.rescols[self.time_col] < pulse_stop
             )
 
-            for gas in self.H_species.keys():
+            for gas in self.H_species:
                 temp_pres = self.rescols[gas]["pressure"]
                 temp_rat = self.rescols[gas]["ratio"]
                 if do_bgr:
@@ -774,7 +774,7 @@ class Trace(RGA_base_container, RGA_fitting):
                     "ratio": int_val_r,
                 }
 
-            for gas in self.non_H_species.keys():
+            for gas in self.non_H_species:
                 temp_pres = self.rescols[gas]["pressure"]
                 if do_bgr:
                     bgr_p = sp.mean(temp_pres)
@@ -787,7 +787,7 @@ class Trace(RGA_base_container, RGA_fitting):
                 self.pulse_integrated_results[gas] = {"pressure": int_val_p}
 
     def join_isotopes(self, isotope_list, common):
-        # if common not in self.rescols.keys():
+        # if common not in self.rescols:
         p_col = sp.zeros(len(self.rescols["index"]))
         r_col = sp.zeros(len(self.rescols["index"]))
         in_rescols = list(set(self.rescols.keys()) & set(isotope_list))
@@ -863,7 +863,7 @@ class Profile(RGA_base_container, RGA_fitting):
         if len(self.header_int) > 0:
             self.filled = True
         # Title of the object. If not in tag, then name automatically with the default title
-        if "title" not in self.tag.keys():
+        if "title" not in self.tag:
             self.tag["title"] = self.def_val["profile_name"]
 
         if self.filled:
@@ -888,7 +888,7 @@ class Profile(RGA_base_container, RGA_fitting):
         self.resline = {}
         self.resline["residual"] = resline["residual"]
 
-        for key in self.H_species.keys():
+        for key in self.H_species:
             self.resline[key] = {}
             self.resline[key]["pressure"] = resline[self.H_species[key][0]]
             if type(self.H_species[key][2]) == list:
@@ -897,7 +897,7 @@ class Profile(RGA_base_container, RGA_fitting):
                 self.resline[key]["ratio"] = resline[self.H_species[key][2]]
             elif type(self.H_species[key][2] in [int, float]):
                 self.resline[key]["ratio"] = self.H_species[key][2]
-        for key in self.non_H_species.keys():
+        for key in self.non_H_species:
             self.resline[key] = {}
             self.resline[key]["pressure"] = resline[self.non_H_species[key][0]]
 
@@ -983,7 +983,7 @@ class Profile(RGA_base_container, RGA_fitting):
                 prescol_value.append(self.resline[gas]["pressure"])
             ratiocol_legend = []
             ratiocol_value = []
-            for gas in self.H_species.keys():
+            for gas in self.H_species:
                 ratiocol_legend.append(gas)
                 ratiocol_value.append(self.resline[gas]["ratio"])
             prescol_legend.append("residual")
@@ -1075,25 +1075,25 @@ def join_traces(in_trace_list, echo=False):
                 % (start_t, ", ".join(HM_t.keys()), ", ".join(NHM_t.keys()))
             )
 
-        for gas in HM_j.keys():
-            if gas not in HM_t.keys():
+        for gas in HM_j:
+            if gas not in HM_t:
                 HM_t[gas] = HM_j[gas]
                 rc_t[gas] = {"pressure": zerocol_t, "ratio": zerocol_t}
-        for gas in NHM_j.keys():
-            if gas not in NHM_t.keys():
+        for gas in NHM_j:
+            if gas not in NHM_t:
                 NHM_t[gas] = NHM_j[gas]
                 rc_d[gas] = {"pressure": zerocol_t}
 
-        for gas in HM_t.keys():
-            if gas not in HM_j.keys():
+        for gas in HM_t:
+            if gas not in HM_j:
                 HM_j[gas] = HM_t[gas]
                 rescols_j[gas] = {"pressure": zerocol_j, "ratio": zerocol_j}
             for what in ["pressure", "ratio"]:
                 rescols_j[gas][what] = sp.concatenate(
                     (rescols_j[gas][what], rc_t[gas][what])
                 )
-        for gas in NHM_t.keys():
-            if gas not in NHM_j.keys():
+        for gas in NHM_t:
+            if gas not in NHM_j:
                 NHM_j[gas] = NHM_t[gas]
                 rescols_j[gas] = {"pressure": zerocol_j}
             rescols_j[gas]["pressure"] = sp.concatenate(
@@ -1105,11 +1105,11 @@ def join_traces(in_trace_list, echo=False):
         for mass in moi_t:
             if mass not in moi_j:
                 moi_j.append(mass)
-        for mass in stc_j.keys():
-            if mass not in stc_t.keys():
+        for mass in stc_j:
+            if mass not in stc_t:
                 stc_t[mass] = zerocol_t
-        for mass in stc_t.keys():
-            if mass not in stc_j.keys():
+        for mass in stc_t:
+            if mass not in stc_j:
                 stc_j[mass] = zerocol_j
             stc_j[mass] = sp.concatenate((stc_j[mass], stc_t[mass]))
 
@@ -1189,11 +1189,11 @@ def join_traces_calib(in_trace_list):
         for mass in moi_t:
             if mass not in moi_j:
                 moi_j.append(mass)
-        for mass in stc_j.keys():
-            if mass not in stc_t.keys():
+        for mass in stc_j:
+            if mass not in stc_t:
                 stc_t[mass] = zerocol_t
-        for mass in stc_t.keys():
-            if mass not in stc_j.keys():
+        for mass in stc_t:
+            if mass not in stc_j:
                 stc_j[mass] = zerocol_j
             stc_j[mass] = sp.concatenate((stc_j[mass], stc_t[mass]))
 
@@ -1215,7 +1215,7 @@ def join_traces_calib(in_trace_list):
 # TO DO: consider a universal version to work both on rescols and resline
 """
 def total_isotopes_trace(trace, isotope_list, common):
-    #if common not in trace.rescols.keys():
+    #if common not in trace.rescols:
     p_col = sp.zeros(len(trace.rescols['index']))
     r_col = sp.zeros(len(trace.rescols['index']))
     in_rescols = list(set(trace.rescols.keys()) & set(isotope_list))

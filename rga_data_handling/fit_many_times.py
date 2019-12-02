@@ -65,11 +65,11 @@ def average(sims):
 
     HM = {}
     NHM = {}
-    for key in sims[0].rescols.keys():
+    for key in sims[0].rescols:
         rc_i = sims[0].rescols[key]
         try:
-            if "pressure" in rc_i.keys():
-                if "ratio" in rc_i.keys():
+            if "pressure" in rc_i:
+                if "ratio" in rc_i:
                     HM[key] = ""
                 else:
                     NHM[key] = ""
@@ -82,7 +82,7 @@ def average(sims):
     gas_list = list(HM.keys()) + list(NHM.keys())
     for gas in gas_list:
         qt_list = ["pressure"]
-        if gas in HM.keys():
+        if gas in HM:
             qt_list.append("ratio")
 
         avg_res[gas] = {}
@@ -122,7 +122,7 @@ def errorbar_results(
     average, sz=default_sz, lp=2, residual=True, gl=None, ratio_limit=None
 ):
 
-    # TO DO - kaj s casovno skalo...
+    # TO DO - what about the timeline ...
 
     fig = plt.figure()
     pres = fig.add_subplot(211)
@@ -195,12 +195,12 @@ def one_trace(traces):
     rescols = trc.rescols
     rescols["time"] = average["time"]
 
-    for gas in trc.H_species.keys():
+    for gas in trc.H_species:
         rescols[gas] = {
             "pressure": average[gas]["pressure"]["val"],
             "ratio": average[gas]["ratio"]["val"],
         }
-    for gas in trc.non_H_species.keys():
+    for gas in trc.non_H_species:
         rescols[gas] = {"pressure": average[gas]["pressure"]["val"]}
 
     trc.rescols = rescols

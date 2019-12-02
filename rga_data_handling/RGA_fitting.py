@@ -24,7 +24,7 @@ def check_candidates(hydrogen_species, non_H_species):
     # check if format of candidate molecules is OK
     # TO DO return {candidate: error codes}
     errors = []
-    for key in hydrogen_species.keys():
+    for key in hydrogen_species:
         specimen = hydrogen_species[key]
         pressure = specimen[0]
         mol_name = specimen[1]
@@ -66,7 +66,7 @@ def check_candidates(hydrogen_species, non_H_species):
             err_val = 40
         errors.append(err_val)
 
-    for key in non_H_species.keys():
+    for key in non_H_species:
         specimen = non_H_species[key]
         pressure = specimen[0]
         mol_name = specimen[1]
@@ -96,7 +96,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
     ratios = []
     boundaries = {"pressure": [], "ratio": []}
     # init_vals = []
-    for key in hydrogen_species.keys():
+    for key in hydrogen_species:
         specimen = hydrogen_species[key]
         pressure_raw = specimen[0]
 
@@ -155,7 +155,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
 
         candidates.append(local_candidate)
 
-    for key in non_H_species.keys():
+    for key in non_H_species:
         specimen = non_H_species[key]
         pressure_raw = specimen[0]
         mol_name = specimen[1]
@@ -401,7 +401,7 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     # boundaries_final = boundaries['pressure'] + boundaries['ratio']
     init_vals_final = init_vals_final + init_vals["ratio"]
     # init_vals_final = init_vals['pressure'] + init_vals['ratio']
-    if "peaks" in boundaries.keys():
+    if "peaks" in boundaries:
         boundaries_final = boundaries_final + boundaries["peaks"]
         init_vals_final = init_vals_final + init_vals["peaks"]
 
@@ -478,7 +478,7 @@ def export_CP_old(CPdict):
         except:
             line = [key] + ["N/A", "N/A", "N/A"]
         outtab.append(line)
-    for key in CPdict.keys():
+    for key in CPdict:
         if key not in ["device", "version", "water", "ammonia", "methane"]:
             try:
                 line = [key] + CPdict[key]
@@ -565,7 +565,7 @@ def export_CP(calib):
     out_new.append(["# Definitions of cracking patterns start here."])
     out_new.append([""])
 
-    for gas in calib["H"].keys():
+    for gas in calib["H"]:
         out_new.append(["H-molecule", gas])
         CP_def = calib["H"][gas]
         for what in ["non-H-mass", "H-atoms"]:
@@ -576,7 +576,7 @@ def export_CP(calib):
             out_new.append([what, CP_def[what]])
         out_new.append([""])
 
-    for gas in calib["non-H"].keys():
+    for gas in calib["non-H"]:
         out_new.append(["non-H-molecule", gas])
         CP_def = calib["non-H"][gas]
         for peak in CP_def["peaks"]:
