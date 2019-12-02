@@ -20,7 +20,7 @@ import pickle
 default_sz = {"legend": 10, "label_x": 14, "label_y": 14, "tick_x": 14, "tick_y": 14}
 
 
-def fit_many_times(container, times, perturb, to_join, *args, **kwargs):
+def fit_many_times(container, times, perturb, *args, to_join=[[], ""], **kwargs):
     if args == None:
         return []
     traces = []
@@ -79,7 +79,7 @@ def average(sims):
     tc_name = sims[0].time_col
     tc = sims[0].rescols[tc_name]
     avg_res = {"time": tc}
-    gas_list = HM.keys() + NHM.keys()
+    gas_list = list(HM.keys()) + list(NHM.keys())
     for gas in gas_list:
         qt_list = ["pressure"]
         if gas in HM.keys():
