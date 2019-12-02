@@ -100,13 +100,13 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
         specimen = hydrogen_species[key]
         pressure_raw = specimen[0]
 
-        if type(pressure_raw) == list:
+        if isinstance(pressure_raw, list):
             if len(pressure_raw) != 3:
                 # error, invalid pressure definition
                 continue
             pressure = pressure_raw[0]
             pres_bnd = pressure_raw[1:]
-        elif type(pressure_raw) == str:
+        elif isinstance(pressure_raw, str):
             pressure = pressure_raw
             pres_bnd = [0, None]
         mol_name = specimen[1]
@@ -118,7 +118,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
             boundaries["pressure"].append(pres_bnd)
             # init_vals.append(1)
 		# check that the isotope ratio is OK
-        if type(ratio_raw) == list:
+        if isinstance(ratio_raw, list):
             if len(ratio_raw) != 3:
                 print("Wrong D/(D+H) ratio definition for %s" % mol_name)
                 continue
@@ -131,7 +131,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
                     ratios.append(ratio)
                     boundaries["ratio"].append(ratio_bnd)
                     # init_vals.append(0.5)
-        elif type(ratio_raw) == str:
+        elif isinstance(ratio_raw, str):
             ratio = ratio_raw
             ratio_bnd = [0, 1]
             if ratio not in temp_parameters:
@@ -143,15 +143,10 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
         elif type(ratio_raw) in [int, float]:
             ratio = ratio_raw
 
-        par_string = ", ".join(local_parameters)
-
-        strings_to_exec = []
-        strings_to_exec.append("%s = sympy.symbols('%s')" % (par_string, par_string))
-        for string in strings_to_exec:
-            exec(string)
-        local_candidate = eval(
-            "%s * molecules.construct('%s', %s)" % (pressure, mol_name, ratio)
-        )
+        for par in local_parameters:
+            locals()[par] = sympy.symbols(par)
+        #local_candidate = locals()[pressure] * molecules.construct(mol_name, locals()[ratio]) # this line should do the same as the one below, but doesnt. TODO!
+        local_candidate = eval("% s * molecules.construct('%s', % s)" %(pressure, mol_name, ratio))
 
         candidates.append(local_candidate)
 
@@ -173,8 +168,8 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
             pressures.append(pressure)
             boundaries["pressure"].append(pres_bnd)
         # init_vals_temp.append(1)
-        exec("%s = sympy.symbols('%s')" % (pressure, pressure))
-        exec("local_candidate = %s * molecules.CP['%s']" % (pressure, mol_name))
+        locals()[pressure] = sympy.symbols(pressure)
+        local_candidate = eval("%s * molecules.CP['%s']" % (pressure, mol_name))
 
         candidates.append(local_candidate)
 
@@ -284,26 +279,11 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     par_string = ", ".join(parameters)
     peak_string = "[%s]" % ", ".join(peaks)
 
-    strings_to_exec = []
-    strings_to_exec.append("%s = sympy.symbols('%s')" % (par_string, par_string))
-    strings_to_exec.append(
-        "candidate = %s * %s * molecules.construct_full(%s, %s, %s, %s)"
-        % (
-            "pres",
-            mol_def["intensity"],
-            mol_def["non-H-mass"],
-            mol_def["H-atoms"],
-            ratio,
-            peak_string,
-        )
-    )
-    for string in strings_to_exec:
-        exec(string)
-
-    candidates = [candidate]
+    locals()[par_string] = sympy.symbols(par_string)
+    candidate = mol_def["pres"] * mol_def["intensity"] * molecules.construct_full(mol_def["non-H-mass"], mol_def["H-atoms"], ratio, peak_string)
 
     cand_dict = {
-        "candidates": candidates,
+        "candidates": [candidate],
         "parameters": parameters,
         "pressures": ["pres"],
         "ratios": [ratio],
@@ -416,16 +396,17 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
             recorded[i] * (recording - ansatz[i]) * (recording - ansatz[i])
         )
     residual_string = str(sum(equations))
-    par_string = "%s = x" % ", ".join(par_all)
-    # setattr(par_all, x)
-    # "asdf {par_string} asfd".format(**locals())
 
     def residual(x):
-        exec(par_string)
+        for i, par in enumerate(par_all):
+            locals()[par] = x[i]
+    
         return eval(residual_string)
 
     def calculate_masses(x):
-        exec(par_string) in locals()
+        for i, par in enumerate(par_all):
+            locals()[par] = x[i]
+    
         output = []
         for mass in map(str, ansatz):
             output.append(eval(mass) * maxval ** -1)
