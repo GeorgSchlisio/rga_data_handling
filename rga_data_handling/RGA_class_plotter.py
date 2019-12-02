@@ -1,5 +1,5 @@
 # coding: utf-8
-# Prikazovalnik meritev in naracunanih rezultatov
+# Display of measurements and calculated results
 # Aleksander Drenik, IJS
 # Oktober 2015
 
@@ -32,8 +32,7 @@ def focus_columns(columns, area, time_col_name="time"):
     return new_columns
 
 
-# Risanje posnetih meritev
-
+# Drawing recorded measurements
 
 def plot_data_profile(profile):
     plot_mode = "plot"
@@ -89,8 +88,7 @@ def plot_data_trace(trace, masslist=None):
     # plt.show()
 
 
-# Risanje rezultatov
-
+# Drawing results
 
 def show_results_profile(profile):
 
@@ -494,7 +492,7 @@ def show_calibration_profile(profile):
     return fig
 
 
-# skupna funkcija za profile in trace
+# common profile and trace feature
 def plot_data(container, masslist=None, save_name=None):
     if container.type == "Trace":
         fig = plot_data_trace(container, masslist)

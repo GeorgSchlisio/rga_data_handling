@@ -117,7 +117,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
             pressures.append(pressure)
             boundaries["pressure"].append(pres_bnd)
             # init_vals.append(1)
-        # preveri, da je izotopsko razmerje v redu
+		# check that the isotope ratio is OK
         if type(ratio_raw) == list:
             if len(ratio_raw) != 3:
                 print("Wrong D/(D+H) ratio definition for %s" % mol_name)
@@ -204,16 +204,16 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
 
 def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     "Construct the candidates and parameters for fit_line"
-    # Za fit potrebujem:
+    # for fit i need:
     # candidates
     # parameters
     # init_vals
     # boundaries
-    # TO DO - popravi na novo verzijo kandidatov
+    # TO DO - fix for new candidate version
     # TO DO - check upper TO DO
 
-    # najprej identifikacija molekule, ce je mogoce, in priprava definicije za construct_full
-    # construct_full zahteva: NH_mass, nAt, p(AKA ratio), peak_list
+    # first identify the molecule, if possible, and construct a definition for construct_full
+    # construct_full requires: NH_mass, nAt, p(AKA ratio), peak_list
     # 14.5.2019 - mol_def key names updated to molecules3 standard names
     # TO DO: error handling - error code or exception
     # Error handling: warning on non-critical, exception on critical
@@ -226,14 +226,14 @@ def make_calibration_candidates(molecules, mol_def, ratio_def, peak_defs):
     ratios = []
     peaks = ["1"]
 
-    # priprava tlaka:
+    # pressure preparation:
 
     parameters.append("pres")
     pressures.append("pres")
     boundaries["pressure"].append([0, None])
     init_vals["pressure"] = [1]
 
-    # priprava izotopskega razmerja
+    # isotope ratio preparation
 
     if type(ratio_def) == list:
         if len(ratio_def) != 3:
@@ -338,7 +338,7 @@ def check_disregard(disregard):
     return errors
 
 
-# definicija fit_line funkcije
+# definition of fit_line function
 # input: line, recorded, header_int, Hspecies, nonHspecies, disregard
 # output: results(dictionary), calculated_masses
 
@@ -353,10 +353,10 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     init_vals = candidates_dict["init_vals"]
     masses_of_interest = candidates_dict["masses_of_interest"]
 
-    # testno - masses of interest se prebere iz candidates_dict
+    # test - masses of interest read from candidates_dict
     # masses_of_interest = []
 
-    # tukaj sem ven vrgel header int - ce dela, ga lahko dam ven iz argumentov.
+    # here I threw out the header int - if it works, I can give it out of arguments.
     # for mass in range(1,len(sum(candidates))):
     #    if sum(candidates)[mass] != 0:
     #        masses_of_interest.append(mass)
@@ -407,9 +407,9 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
 
     ansatz = sum(candidates)
     equations = []
-    # ali gre i po masses_of_interest ali header_int?
-    # potrebno je sesteti po vseh posnetih masah - NE! Potem k ostanku prispevajo tudi mase, ki ne nastopajo v nastavku
-    # masses_of_interest je tako ali tako definiran po tem, da je vsota kandidatov (i.e. ansatz) == 0
+    # is it also masses_of_interest or header_int?
+    # must be assembled after all recorded masses - NO! Then the masses, which do not appear below, also contribute to the remainder
+    # masses_of_interest is defined anyway by the sum of candidates (i.e. ansatz) == 0
     for i in masses_of_interest:
         recording = line[i] * maxval
         equations.append(
