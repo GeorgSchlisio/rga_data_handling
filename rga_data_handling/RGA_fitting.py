@@ -145,8 +145,7 @@ def make_candidates(molecules, hydrogen_species, non_H_species):
 
         for par in local_parameters:
             locals()[par] = sympy.symbols(par)
-        #local_candidate = locals()[pressure] * molecules.construct(mol_name, locals()[ratio]) # this line should do the same as the one below, but doesnt. TODO!
-        local_candidate = eval("% s * molecules.construct('%s', % s)" %(pressure, mol_name, ratio))
+        local_candidate = locals()[pressure] * molecules.construct(mol_name, locals()[ratio] if isinstance(ratio, str) else ratio)
 
         candidates.append(local_candidate)
 
