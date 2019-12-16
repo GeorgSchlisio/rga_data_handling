@@ -394,13 +394,15 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
         equations.append(
             recorded[i] * (recording - ansatz[i]) * (recording - ansatz[i])
         )
+
     residual_string = str(sum(equations))
+    #residual_string = ''.join(equations) # TODO: make this work to get rid of the sum above
 
     def residual(x):
         for i, par in enumerate(par_all):
             locals()[par] = x[i]
     
-        return eval(residual_string)
+        return eval(residual_string)[0]
 
     def calculate_masses(x):
         for i, par in enumerate(par_all):
@@ -414,9 +416,7 @@ def fit_line(line, recorded_in, header_int, candidates_dict, disregard, n_iter=0
     start_time = time.clock()
     # if more than 0 iterations are specified, use the basinhopping function
     if n_iter == 0:
-        rez = so.minimize(
-            residual, init_vals_final, bounds=boundaries_final, method="L-BFGS-B"
-        )
+        rez = so.minimize(residual, init_vals_final, bounds=boundaries_final, method="L-BFGS-B")
     else:
         rez = so.basinhopping(
             residual,
